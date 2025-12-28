@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏛️ Girsang Boru Panagolan Tangerang</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiR2lyc2FuZyBCb3J1IFBhbmFnb2xhbiIsInNob3J0X25hbWUiOiJHYnAiLCJzdGFydF91cmwiOiIvIiwidiI6IjEuMCIsImJhY2tncm91bmRfY29sb3IiOiIjZjhmOWZhIiwidGhlbWVfY29sb3IiOiIjNjY3ZWVhIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsRVhQQVNEQVRBWE1MKDt3aWR0aDozMjU7aGVpZ2h0OjMyNTtmaWxsOiM2NjdlZWE7c3Ryb2tlOiN3aGl0ZTtzdHJva2Utd2lkdGg6MjU7PD48cGF0aCBkPSdNMTYgMGM4IDhoOC04eiBtLTQtNHY4aDh2LThoLTJ6Jy8+PC9zdmc+Iiwic2l6ZXMiOiIyNTZ4MjU2IiwidHlwZSI6ImltYWdlL3N2ZyJ9XX0=">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:system-ui,-apple-system,sans-serif;background:#f8f9fa;height:100vh;overflow:auto;}
+        .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:15px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.1);position:sticky;top:0;z-index:100;}
+        .header h1{font-size:clamp(1.5rem,5vw,2rem);margin:0;font-weight:300;}
+        .header p{font-size:clamp(0.8rem,3vw,1rem);opacity:0.9;margin:0;}
+        .navbar{background:#fff;padding:12px;box-shadow:0 2px 5px rgba(0,0,0,0.1);position:sticky;top:60px;z-index:99;}
+        .nav-links{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;}
+        .nav-links a{color:#495057;text-decoration:none;font-weight:500;padding:10px 12px;border-radius:20px;font-size:clamp(0.8rem,2.5vw,1rem);transition:all 0.3s;}
+        .nav-links a:hover,.nav-links a.active{background:#667eea;color:white;}
+        .container{padding:15px;max-width:1400px;margin:0 auto;}
+        .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:15px 0;}
+        .stat-card{background:white;padding:20px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,0.08);text-align:center;}
+        .stat-number{font-size:clamp(1.5rem,6vw,2.5rem);font-weight:bold;color:#667eea;}
+        .stat-label{color:#666;font-size:clamp(0.7rem,2.5vw,0.9rem);}
+        .section{background:white;margin:15px 0;border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,0.08);display:none;}
+        .section.active{display:block;}
+        .section-header{padding:20px;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:white;}
+        .section-content{padding:20px;}
+        .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}
+        input,select,textarea{width:100%;padding:12px;border:2px solid #e9ecef;border-radius:8px;font-size:16px;transition:border-color 0.3s;}
+        input:focus,select:focus,textarea:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1);}
+        .btn{padding:12px 20px;border:none;border-radius:8px;cursor:pointer;font-size:16px;font-weight:500;transition:all 0.3s;margin:5px;flex:1;}
+        .btn-primary{background:#28a745;color:white;}
+        .btn-primary:hover{background:#218838;}
+        .btn-danger{background:#dc3545;color:white;}
+        .btn-danger:hover{background:#c82333;}
+        table{width:100%;border-collapse:collapse;margin:15px 0;font-size:14px;}
+        th{padding:12px;background:#667eea;color:white;text-align:left;font-weight:500;}
+        td{padding:12px;border-bottom:1px solid #e9ecef;}
+        tr:hover{background:#f8f9fa;}
+        .status-badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;display:inline-block;}
+        .status-aktif{background:#d4edda;color:#155724;}
+        .status-nonaktif{background:#f8d7da;color:#721c24;}
+        .login-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:1000;}
+        .login-box{background:white;padding:30px;border-radius:15px;width:90%;max-width:350px;text-align:center;}
+        .online-status{position:absolute;top:10px;right:15px;padding:5px 10px;border-radius:20px;font-size:12px;}
+        .online{background:#28a745;color:white;}
+        .offline{background:#dc3545;color:white;}
+        .loading{display:inline-block;width:20px;height:20px;border:2px solid #f3f3f3;border-top:2px solid #667eea;border-radius:50%;animation:spin 1s linear infinite;}
+        @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+        @media(max-width:480px){.form-grid{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+    <!-- Login Overlay -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-box">
+            <h2 style="color:#667eea;margin-bottom:20px;">🏛️ Girsang Boru Panagolan</h2>
+            <p style="color:#666;margin-bottom:20px;">Sistem Manajemen Tangerang</p>
+            <input type="text" id="username" placeholder="Username" value="admin">
+            <input type="password" id="password" placeholder="Password" value="admin123">
+            <button onclick="login()" class="btn btn-primary" style="width:100%;margin-top:15px;">🚀 Masuk</button>
+            <p style="margin-top:15px;color:#666;font-size:12px;">Default: admin / admin123</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="header" id="header" style="display:none;">
+        <h1>🏛️ Girsang Boru Panagolan</h1>
+        <p>Sistem Manajemen Online | <span id="roleDisplay"></span></p>
+        <div class="online-status" id="onlineStatus">
+            <span class="loading"></span> Menghubungkan...
+        </div>
+        <button onclick="logout()" class="btn btn-danger" style="position:absolute;top:15px;right:15px;padding:8px 12px;font-size:14px;border-radius:50%;width:45px;height:45px;">×</button>
+    </div>
+
+    <nav class="navbar" id="navbar" style="display:none;">
+        <div class="nav-links">
+            <a onclick="showSection('dashboard')" class="active">📊 Dashboard</a>
+            <a onclick="showSection('members')">👥 Anggota</a>
+            <a onclick="showSection('attendance')">📋 Absensi</a>
+            <a onclick="showSection('finance')">💰 Keuangan</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- DASHBOARD -->
+        <section class="section active" id="dashboard">
+            <div class="section-header"><h2>📊 Dashboard</h2></div>
+            <div class="section-content">
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="activeMembers">0</div>
+                        <div class="stat-label">Anggota Aktif</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="todayAttendance">0</div>
+                        <div class="stat-label">Hadir Hari Ini</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="saldoKas">Rp 0</div>
+                        <div class="stat-label">Saldo Kas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalMembers">0</div>
+                        <div class="stat-label">Total Anggota</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- KEANGGOTAAN -->
+        <section class="section" id="members">
+            <div class="section-header"><h2>👥 Manajemen Anggota</h2></div>
+            <div class="section-content">
+                <div class="form-grid">
+                    <input type="text" id="nama" placeholder="Nama Lengkap *">
+                    <input type="text" id="alamat" placeholder="Alamat *">
+                    <input type="tel" id="no_hp" placeholder="No. HP">
+                    <input type="email" id="email" placeholder="Email">
+                    <input type="text" id="jabatan" placeholder="Jabatan">
+                    <input type="date" id="tanggal_lahir">
+                    <button onclick="addMember()" class="btn btn-primary">➕ Tambah</button>
+                </div>
+                <table id="membersTable">
+                    <thead><tr><th>ID</th><th>Nama</th><th>Alamat</th><th>HP</th><th>Status</th><th>Aksi</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ABSENSI -->
+        <section class="section" id="attendance">
+            <div class="section-header"><h2>📋 Daftar Hadir</h2></div>
+            <div class="section-content">
+                <div class="form-grid">
+                    <select id="member_id_att">
+                        <option value="">Pilih Anggota</option>
+                    </select>
+                    <input type="date" id="tanggal_att">
+                    <select id="status_hadir">
+                        <option value="hadir">✅ Hadir</option>
+                        <option value="alfa">❌ Alfa</option>
+                        <option value="izin">📄 Izin</option>
+                        <option value="sakit">🏥 Sakit</option>
+                    </select>
+                    <input type="text" id="keterangan_att" placeholder="Keterangan">
+                    <button onclick="addAttendance()" class="btn btn-primary">✅ Absen</button>
+                </div>
+                <h3 style="margin:20px 0 10px 0;">📊 Hadir Hari Ini</h3>
+                <table id="attendanceTable">
+                    <thead><tr><th>Nama</th><th>Status</th><th>Waktu</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- KEUANGAN -->
+        <section class="section" id="finance">
+            <div class="section-header"><h2>💰 Keuangan</h2></div>
+            <div class="section-content">
+                <div class="form-grid">
+                    <select id="member_id_fin">
+                        <option value="">[Umum]</option>
+                    </select>
+                    <input type="text" id="deskripsi_fin" placeholder="Deskripsi *">
+                    <input type="number" id="jumlah_fin" step="1000" placeholder="Jumlah *">
+                    <input type="date" id="tanggal_fin">
+                    <select id="jenis_fin">
+                        <option value="pemasukan">💰 Masuk</option>
+                        <option value="pengeluaran">📤 Keluar</option>
+                    </select>
+                    <button onclick="addFinance()" class="btn btn-primary">💸 Simpan</button>
+                </div>
+                <h3 style="margin:20px 0 10px 0;">📈 Transaksi Terbaru</h3>
+                <table id="financeTable">
+                    <thead><tr><th>Deskripsi</th><th>Jumlah</th><th>Tgl</th><th>Jenis</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, onValue, set, push } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // Ganti dengan Firebase config GRATIS Anda (buat di console.firebase.google.com)
+        const firebaseConfig = {
+            // PASTE CONFIG ANDA DI SINI
+            apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            authDomain: "your-project.firebaseapp.com",
+            databaseURL: "https://your-project-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "your-project",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:xxxxxxxxxxxxxxxxxx"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let currentUser = null;
+        let members = [], attendance = [], finance = [];
+
+        // Network Status
+        window.addEventListener('online', () => updateStatus(true));
+        window.addEventListener('offline', () => updateStatus(false));
+
+        function updateStatus(online) {
+            const status = document.getElementById('onlineStatus');
+            status.innerHTML = online ? '🟢 Online' : '🔴 Offline';
+            status.className = `online-status ${online ? 'online' : 'offline'}`;
+        }
+
+        // Login
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if(username === 'admin' && password === 'admin123') {
+                currentUser = 'admin';
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('header').style.display = 'block';
+                document.getElementById('navbar').style.display = 'block';
+                document.getElementById('roleDisplay').textContent = 'Admin';
+                loadData();
+                updateStatus(navigator.onLine);
+            } else {
+                alert('Login gagal!');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('header').style.display = 'none';
+            document.getElementById('navbar').style.display = 'none';
+        }
+
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+            if(sectionId === 'dashboard') loadDashboard();
+        }
+
+        // Real-time Data Loading
+        function loadData() {
+            // Members
+            onValue(ref(db, 'members'), (snapshot) => {
+                members = snapshot.val() ? Object.values(snapshot.val()) : [];
+                renderMembers();
+                updateMemberSelects();
+                loadDashboard();
+            });
+
+            // Attendance
+            onValue(ref(db, 'attendance'), (snapshot) => {
+                attendance = snapshot.val() ? Object.values(snapshot.val()) : [];
+                renderAttendance();
+                loadDashboard();
+            });
+
+            // Finance
+            onValue(ref(db, 'finance'), (snapshot) => {
+                finance = snapshot.val() ? Object.values(snapshot.val()) : [];
+                renderFinance();
+                loadDashboard();
+            });
+        }
+
+        function addMember() {
+            const data = {
+                nama: document.getElementById('nama').value,
+                alamat: document.getElementById('alamat').value,
+                no_hp: document.getElementById('no_hp').value,
+                email: document.getElementById('email').value,
+                jabatan: document.getElementById('jabatan').value,
+                tanggal_lahir: document.getElementById('tanggal_lahir').value,
+                status: 'aktif',
+                id: Date.now()
+            };
+            if(!data.nama || !data.alamat) return alert('Nama & alamat wajib!');
+            push(ref(db, 'members'), data);
+            clearMemberForm();
+        }
+
+        function addAttendance() {
+            const data = {
+                member_id: document.getElementById('member_id_att').value,
+                tanggal: document.getElementById('tanggal_att').value,
+                waktu: new Date().toLocaleTimeString('id-ID', {hour12: false}).slice(0,8),
+                status_hadir: document.getElementById('status_hadir').value,
+                keterangan: document.getElementById('keterangan_att').value,
+                id: Date.now()
+            };
+            if(!data.member_id || !data.tanggal) return alert('Pilih anggota & tanggal!');
+            push(ref(db, 'attendance'), data);
+            document.getElementById('member_id_att').value = '';
+        }
+
+        function addFinance() {
+            const data = {
+                member_id: document.getElementById('member_id_fin').value || null,
+                deskripsi: document.getElementById('deskripsi_fin').value,
+                jumlah: parseFloat(document.getElementById('jumlah_fin').value),
+                tanggal: document.getElementById('tanggal_fin').value,
+                jenis: document.getElementById('jenis_fin').value,
+                id: Date.now()
+            };
+            if(!data.deskripsi || !data.jumlah || !data.tanggal) return alert('Lengkapi data!');
+            push(ref(db, 'finance'), data);
+            clearFinanceForm();
+        }
+
+        function renderMembers() {
+            const tbody = document.querySelector('#membersTable tbody');
+            tbody.innerHTML = '';
+            members.filter(m => m.status === 'aktif').slice(-20).forEach(member => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${member.id}</td>
+                    <td><strong>${member.nama}</strong></td>
+                    <td>${member.alamat?.slice(0,20)}${member.alamat?.length > 20 ? '...' : ''}</td>
+                    <td>${member.no_hp || '-'}</td>
+                    <td><span class="status-badge status-${member.status}">${member.status}</span></td>
+                    <td><button onclick="deleteMember(${member.id})" class="btn btn-danger" style="padding:6px 12px;font-size:12px;">Nonaktif</button></td>
+                `;
+            });
+        }
+
+        function updateMemberSelects() {
+            const selects = ['member_id_att', 'member_id_fin'];
+            selects.forEach(id => {
+                const select = document.getElementById(id);
+                select.innerHTML = id === 'member_id_fin' ? '<option value="">[Umum]</option>' : '<option value="">Pilih Anggota</option>';
+                members.filter(m => m.status === 'aktif').forEach(m => {
+                    select.innerHTML += `<option value="${m.id}">${m.nama}</option>`;
+                });
+            });
+        }
+
+        function renderAttendance() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayAtt = attendance.filter(a => a.tanggal === today);
+            const tbody = document.querySelector('#attendanceTable tbody');
+            tbody.innerHTML = '';
+            todayAtt.slice(-10).forEach(att => {
+                const member = members.find(m => m.id == att.member_id);
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${member ? member.nama : 'Unknown'}</td>
+                    <td>${att.status_hadir}</td>
+                    <td>${att.waktu}</td>
+                `;
+            });
+        }
+
+        function renderFinance() {
+            const tbody = document.querySelector('#financeTable tbody');
+            tbody.innerHTML = '';
+            finance.slice(0,10).forEach(fin => {
+                const member = members.find(m => m.id == fin.member_id);
+                const row = tbody.insertRow();
+                const color = fin.jenis === 'pemasukan' ? '#28a745' : '#dc3545';
+                row.innerHTML = `
+                    <td>${fin.deskripsi}</td>
+                    <td style="color:${color};font-weight:bold">Rp ${parseInt(fin.jumlah).toLocaleString()}</td>
+                    <td>${fin.tanggal}</td>
+                    <td>${fin.jenis}</td>
+                `;
+            });
+        }
+
+        function loadDashboard() {
+            const today = new Date().toISOString().split('T')[0];
+            const activeMembersCount = members.filter(m => m.status === 'aktif').length;
+            const todayAttendanceCount = attendance.filter(a => a.tanggal === today).length;
+            const totalMembersCount = members.length;
+            const saldo = finance.reduce((sum, f) => 
+                f.jenis === 'pemasukan' ? sum + parseFloat(f.jumlah || 0) : sum - parseFloat(f.jumlah || 0), 0);
+
+            document.getElementById('activeMembers').textContent = activeMembersCount;
+            document.getElementById('todayAttendance').textContent = todayAttendanceCount;
+            document.getElementById('saldoKas').textContent = 'Rp ' + Math.abs(saldo).toLocaleString();
+            document.getElementById('totalMembers').textContent = totalMembersCount;
+        }
+
+        function clearMemberForm() {
+            document.getElementById('nama').value = '';
+            document.getElementById('alamat').value = '';
+            document.querySelectorAll('#members input').forEach(input => input.value = '');
+        }
+
+        function clearFinanceForm() {
+            document.getElementById('deskripsi_fin').value = '';
+            document.getElementById('jumlah_fin').value = '';
+        }
+
+        function deleteMember(id) {
+            if(confirm('Nonaktifkan anggota?')) {
+                const member = members.find(m => m.id === id);
+                if(member) {
+                    member.status = 'nonaktif';
+                    set(ref(db, `members/${member.id}`), member);
+                }
+            }
+        }
+
+        // Init dates
+        document.getElementById('tanggal_att').value = new Date().toISOString().split('T')[0];
+        document.getElementById('tanggal_fin').value = new Date().toISOString().split('T')[0];
+
+        // PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:text/javascript;base64,' + btoa(`
+                self.addEventListener('install', e => {
+                    self.skipWaiting();
+                });
+                self.addEventListener('activate', e => {
+                    self.clients.claim();
+                });
+                self.addEventListener('fetch', e => {
+                    e.respondWith(fetch(e.request));
+                });
+            `));
+        }
+
+        // Auto-login check (simple)
+        if(localStorage.getItem('girsang_auto') === 'true') {
+            login();
+        }
+    </script>
+</body>
+</html>
