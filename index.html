@@ -74,6 +74,7 @@
 
         .config-status{background:#d4edda;padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid #28a745;}
         .config-status h3{margin:0 0 10px 0;color:#155724;}
+        .config-status.admin-only{display:none;}
         .user-info{display:flex;align-items:center;gap:10px;background:#e9ecef;padding:10px;border-radius:8px;margin-bottom:15px;}
         .user-role-badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;}
         .role-admin{background:#17a2b8;color:white;}
@@ -154,8 +155,8 @@
             <span class="user-role-badge" id="currentRole"></span>
         </div>
 
-        <!-- ✅ FIREBASE CONFIG SUDAH TERINSTAL -->
-        <div class="config-status">
+        <!-- ✅ FIREBASE CONFIG - ADMIN ONLY NOW -->
+        <div id="configStatus" class="config-status admin-only">
             <h3>✅ Firebase Terhubung!</h3>
             <p><strong>Project:</strong> girsangborupanagolantangerang<br>
             <strong>Database:</strong> Realtime Database (asia-southeast1)<br>
@@ -378,14 +379,18 @@
             // Show/hide admin features
             const adminNav = document.getElementById('usersNav');
             const adminElements = document.querySelectorAll('.admin-only');
+            const configStatus = document.getElementById('configStatus');
+            
             if(currentUser.role === 'admin') {
                 adminNav.style.display = 'inline-block';
                 adminElements.forEach(el => el.style.display = 'block');
+                if(configStatus) configStatus.style.display = 'block';
                 document.getElementById('statusIndicator').style.display = 'flex';
                 updateStatus('🟢 Siap!', '#28a745');
             } else {
                 adminNav.style.display = 'none';
                 adminElements.forEach(el => el.style.display = 'none');
+                if(configStatus) configStatus.style.display = 'none';
                 document.getElementById('statusIndicator').style.display = 'none';
             }
         }
