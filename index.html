@@ -66,9 +66,8 @@
         .login-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#f8f9fa;display:flex;align-items:center;justify-content:center;z-index:2000;}
         .login-box{background:white;padding:40px;border-radius:20px;width:90%;max-width:350px;box-shadow:0 10px 25px rgba(0,0,0,0.1);text-align:center;}
 
-        .config-panel{background:#fff5cd;padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid #ffc107;}
-        .config-panel h3{margin:0 0 10px 0;color:#856404;}
-        .config-panel code{background:#fff3cd;padding:4px 8px;border-radius:4px;font-size:12px;}
+        .config-status{background:#d4edda;padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid #28a745;}
+        .config-status h3{margin:0 0 10px 0;color:#155724;}
 
         @media(max-width:768px){.nav-links{justify-content:flex-start;padding-bottom:5px;}.btn{width:100%;}}
     </style>
@@ -95,7 +94,7 @@
             <span id="statusText">Memuat...</span>
         </div>
         <h1>🏛️ Girsang Boru Panagolan</h1>
-        <p>Dashboard Manajemen & Keuangan - Offline + Auto Sync</p>
+        <p>Dashboard Manajemen & Keuangan - Offline + Auto Sync ✅</p>
         <div class="close-btn-logout" onclick="logout()" title="Keluar">⏻</div>
     </div>
 
@@ -109,20 +108,12 @@
     </nav>
 
     <div class="container" id="mainContainer" style="display:none;">
-        <!-- 🔥 KONFIGURASI FIREBASE - GANTI INI! -->
-        <div class="config-panel" id="firebaseConfigPanel">
-            <h3>⚙️ Konfigurasi Firebase</h3>
-            <p>Ganti <code>firebaseConfig</code> di bawah dengan project Firebase Anda:</p>
-            <textarea id="configEditor" rows="6" style="width:100%;font-family:monospace;font-size:12px;">const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "your-project.firebaseapp.com",
-  databaseURL: "https://your-project-default-rtdb.asia-southeast1.firebasedatabase.app/",
-  projectId: "your-project",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef123456"
-};</textarea>
-            <button onclick="saveConfigAndInit()" class="btn btn-primary" style="max-width:200px;margin-top:10px;">💾 Simpan & Mulai</button>
+        <!-- ✅ FIREBASE CONFIG SUDAH TERINSTAL -->
+        <div class="config-status">
+            <h3>✅ Firebase Terhubung!</h3>
+            <p><strong>Project:</strong> girsangborupanagolantangerang<br>
+            <strong>Database:</strong> Realtime Database (asia-southeast1)<br>
+            <small>Status: Offline-first + Auto Sync Multi-Device</small></p>
         </div>
 
         <section class="section active" id="dashboard">
@@ -214,25 +205,48 @@
     </div>
 
     <script>
-        // 🔥 GLOBAL VARIABLES
-        let db = null;
+        // 🔥 FIREBASE CONFIG ANDA - SUDAH TERINSTAL!
+        const firebaseConfig = {
+            apiKey: "AIzaSyCqF5VG2T03yaHOAq8dPhtvgMYrbVq-DIs",
+            authDomain: "girsangborupanagolantangerang.firebaseapp.com",
+            databaseURL: "https://girsangborupanagolantangerang-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "girsangborupanagolantangerang",
+            storageBucket: "girsangborupanagolantangerang.firebasestorage.app",
+            messagingSenderId: "823404152768",
+            appId: "1:823404152768:web:c743fa07b22455452b2a25",
+            measurementId: "G-716P2TK99Y"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // --- GLOBAL VARIABLES ---
         let connectionStatus = 'offline';
         let syncQueue = [];
         let isSyncing = false;
         let members = [], attendance = [], finance = [];
-        let localLastSync = parseInt(localStorage.getItem('gbp_lastSync')) || 0;
         let appInitialized = false;
 
-        // 🔥 FIREBASE CONFIG (USER EDITABLE)
-        let firebaseConfig = {
-            apiKey: "AIzaSyDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            authDomain: "your-project.firebaseapp.com",
-            databaseURL: "https://your-project-default-rtdb.asia-southeast1.firebasedatabase.app/",
-            projectId: "your-project-id",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:xxxxxxxxxxxxxxxxxx"
-        };
+        // --- STATUS MONITOR ---
+        db.ref('.info/connected').on('value', (snap) => {
+            if (snap.val() === true && connectionStatus !== 'online') {
+                connectionStatus = 'online';
+                updateStatus('🟢 Online & Sinkron', '#28a745');
+                if(appInitialized) processSyncQueue();
+            } else if (snap.val() === false && connectionStatus !== 'offline') {
+                connectionStatus = 'offline';
+                updateStatus('🔴 Offline (Lokal OK)', '#dc3545');
+            }
+        });
+
+        function updateStatus(text, color) {
+            document.getElementById('statusText').textContent = text;
+            document.getElementById('statusDot').style.background = color;
+            document.getElementById('statusDot').className = color === '#ffc107' ? 'status-dot status-syncing' : 'status-dot';
+        }
+
+        updateStatus('🟢 Siap!', '#28a745');
 
         // --- LOGIN SYSTEM ---
         function login() {
@@ -248,56 +262,9 @@
 
         function logout() {
             if(confirm('Keluar dari sistem?')) {
-                localStorage.removeItem('gbp_logged');
-                localStorage.removeItem('gbp_firebaseConfig');
+                localStorage.clear();
                 location.reload();
             }
-        }
-
-        // --- FIREBASE INIT & CONFIG ---
-        function saveConfigAndInit() {
-            try {
-                const configText = document.getElementById('configEditor').value;
-                firebaseConfig = eval('(' + configText + ')');
-                localStorage.setItem('gbp_firebaseConfig', configText);
-                document.getElementById('firebaseConfigPanel').style.display = 'none';
-                initFirebase();
-            } catch(e) {
-                alert('❌ Format config salah! Periksa JSON.');
-            }
-        }
-
-        function initFirebase() {
-            try {
-                firebase.initializeApp(firebaseConfig);
-                db = firebase.database();
-                
-                // Connection monitor
-                db.ref('.info/connected').on('value', (snap) => {
-                    if (snap.val() === true && connectionStatus !== 'online') {
-                        connectionStatus = 'online';
-                        updateStatus('🟢 Online & Sinkron', '#28a745');
-                        processSyncQueue();
-                        if(appInitialized) loadAllData();
-                    } else if (snap.val() === false && connectionStatus !== 'offline') {
-                        connectionStatus = 'offline';
-                        updateStatus('🔴 Offline (Lokal)', '#dc3545');
-                    }
-                });
-
-                updateStatus('🟢 Siap!', '#28a745');
-                document.getElementById('firebaseConfigPanel').innerHTML = '<div style="color:#28a745;font-weight:bold;">✅ Firebase Terhubung!</div>';
-            } catch(e) {
-                updateStatus('❌ Firebase Error', '#dc3545');
-                console.error('Firebase init failed:', e);
-            }
-        }
-
-        // --- STATUS UI ---
-        function updateStatus(text, color) {
-            document.getElementById('statusText').textContent = text;
-            document.getElementById('statusDot').style.background = color;
-            document.getElementById('statusDot').className = color === '#ffc107' ? 'status-dot status-syncing' : 'status-dot';
         }
 
         // --- MAIN APP INIT ---
@@ -306,14 +273,6 @@
             document.getElementById('header').style.display = 'block';
             document.getElementById('navbar').style.display = 'block';
             document.getElementById('mainContainer').style.display = 'block';
-
-            // Load saved config
-            const savedConfig = localStorage.getItem('gbp_firebaseConfig');
-            if(savedConfig) {
-                firebaseConfig = eval('(' + savedConfig + ')');
-                document.getElementById('firebaseConfigPanel').style.display = 'none';
-                initFirebase();
-            }
 
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('tanggal_att').value = today;
@@ -335,10 +294,10 @@
         }
 
         async function processSyncQueue() {
-            if (isSyncing || syncQueue.length === 0 || !db || connectionStatus !== 'online') return;
+            if (isSyncing || syncQueue.length === 0 || connectionStatus !== 'online') return;
             
             isSyncing = true;
-            updateStatus('🔄 Sinkronisasi ' + syncQueue.length + '...', '#ffc107');
+            updateStatus('🔄 Sinkron ' + syncQueue.length + '...', '#ffc107');
             
             while (syncQueue.length > 0) {
                 const item = syncQueue.shift();
@@ -376,14 +335,14 @@
         }
 
         async function loadAllData() {
-            // Load local data first (offline support)
+            // Load local first (offline support)
             members = JSON.parse(localStorage.getItem('gbp_members')) || [];
             attendance = JSON.parse(localStorage.getItem('gbp_attendance')) || [];
             finance = JSON.parse(localStorage.getItem('gbp_finance')) || [];
             syncQueue = JSON.parse(localStorage.getItem('gbp_syncQueue')) || [];
 
             // Sync from Firebase if online
-            if (db && connectionStatus === 'online') {
+            if (connectionStatus === 'online') {
                 try {
                     const snapshot = await db.ref().once('value');
                     if (snapshot.exists()) {
@@ -562,7 +521,6 @@
         }
 
         function manualSync() {
-            if (!db) return alert('❌ Firebase belum diinisialisasi!');
             if (connectionStatus === 'online') {
                 processSyncQueue();
                 loadAllData();
@@ -585,19 +543,6 @@
         // --- AUTO INIT ---
         if(localStorage.getItem('gbp_logged') === 'true') {
             initApp();
-        }
-
-        // --- PWA SERVICE WORKER (OPTIONAL) ---
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register(new URL('data:text/javascript;base64,' + btoa(`
-                self.addEventListener('fetch', e => {
-                    e.respondWith(
-                        fetch(e.request).catch(() => {
-                            return new Response('Offline - Data tersimpan lokal', {status: 200});
-                        })
-                    );
-                });
-            `), {scope: '/'}).catch(() => {});
         }
     </script>
 </body>
