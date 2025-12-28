@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+<!DOCTYPE html>                    
+  
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -86,13 +87,291 @@
         .edit-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:3000;}
         .modal-content{background:white;padding:30px;border-radius:12px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;}
 
-        @media(max-width:768px){.nav-links{justify-content:flex-start;padding-bottom:5px;}.btn{width:100% !important;}.user-row{flex-direction:column;gap:10px;text-align:center;}.user-actions{justify-content:center;}}
+        /* Import Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+        
+        .modal-box {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-close {
+            cursor: pointer;
+            font-size: 24px;
+            color: #666;
+        }
+        
+        .import-preview {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin: 15px 0;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+        
+        .preview-table {
+            width: 100%;
+            font-size: 12px;
+            border-collapse: collapse;
+        }
+        
+        .preview-table th,
+        .preview-table td {
+            border: 1px solid #ddd;
+            padding: 5px;
+            text-align: left;
+        }
+        
+        .preview-table th {
+            background: #f1f3f5;
+            font-weight: bold;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-upload-area:hover {
+            background: #f0f4ff;
+        }
+        
+        .file-upload-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .file-upload-text {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .file-name {
+            font-size: 12px;
+            color: #28a745;
+            margin-top: 10px;
+        }
+        
+        .import-options {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .option-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        
+        .option-item input {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .option-label {
+            font-size: 14px;
+        }
+        
+        .import-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .stat-item {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .step-content {
+            display: none;
+        }
+        
+        .active-step {
+            display: block;
+        }
+        
+        @media(max-width:768px){
+            .nav-links{justify-content:flex-start;padding-bottom:5px;}
+            .btn{width:100% !important;}
+            .user-row{flex-direction:column;gap:10px;text-align:center;}
+            .user-actions{justify-content:center;}
+            .import-stats{grid-template-columns:repeat(1,1fr);}
+        }
     </style>
 </head>
 <body>
     <!-- 🔥 FIREBASE SDK (CDN) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+    <!-- IMPORT MODAL -->
+    <div id="importModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>📁 Import Data Anggota</h3>
+                <div class="modal-close" onclick="closeImportModal()">×</div>
+            </div>
+            
+            <div class="import-steps">
+                <!-- Step 1: Upload File -->
+                <div id="step1" class="step-content active-step">
+                    <p style="margin-bottom: 15px; color: #666; font-size: 14px;">
+                        Upload file CSV/Excel dengan format berikut:
+                    </p>
+                    
+                    <div style="background: #f1f3f5; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+                        <code style="font-size: 11px;">
+                            NO,NAMA KEPALA KELUARGA,TANGGAL LAHIR,ALAMAT,JUMLAH ANAK,NAMA ANAK,TANGGAL LAHIR ANAK,PENDIDIKAN ANAK,ANGGOTA DEWASA
+                        </code>
+                    </div>
+                    
+                    <div class="file-upload-area" onclick="document.getElementById('fileInput').click()" id="dropArea">
+                        <div class="file-upload-icon">📂</div>
+                        <div class="file-upload-text">Klik untuk memilih file atau drop file di sini</div>
+                        <div class="file-upload-text">Format: .csv, .xlsx, .xls</div>
+                        <div id="selectedFileName" class="file-name"></div>
+                    </div>
+                    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display: none;" onchange="handleFileSelect(event)">
+                    
+                    <div class="import-options">
+                        <div class="option-item">
+                            <input type="checkbox" id="overwriteData" checked>
+                            <label for="overwriteData" class="option-label">Overwrite data yang sudah ada</label>
+                        </div>
+                        <div class="option-item">
+                            <input type="checkbox" id="skipDuplicates" checked>
+                            <label for="skipDuplicates" class="option-label">Lewati data duplikat</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Preview Data -->
+                <div id="step2" class="step-content">
+                    <h4>🔍 Preview Data (10 baris pertama)</h4>
+                    <div class="import-preview">
+                        <table class="preview-table" id="previewTable">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nama Kepala</th>
+                                    <th>Tgl Lahir</th>
+                                    <th>Alamat</th>
+                                    <th>Jml Anak</th>
+                                    <th>Nama Anak</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewBody"></tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="import-stats" id="importStats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="totalRows">0</div>
+                            <div class="stat-label">Total Data</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="validRows">0</div>
+                            <div class="stat-label">Data Valid</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="duplicateRows">0</div>
+                            <div class="stat-label">Duplikat</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Import Progress -->
+                <div id="step3" class="step-content">
+                    <h4>⏳ Sedang Mengimport...</h4>
+                    <div style="background: #f1f3f5; height: 20px; border-radius: 10px; margin: 20px 0;">
+                        <div id="progressBar" style="background: #28a745; height: 100%; width: 0%; border-radius: 10px; transition: width 0.3s;"></div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div id="progressText" style="font-size: 14px; margin-bottom: 10px;">Menyiapkan...</div>
+                        <div id="progressDetails" style="font-size: 12px; color: #666;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="prevBtn" onclick="prevStep()" class="btn btn-warning" style="flex: 1; display: none;">⬅ Kembali</button>
+                <button id="nextBtn" onclick="nextStep()" class="btn btn-primary" style="flex: 1;">Selanjutnya →</button>
+                <button id="importBtn" onclick="startImport()" class="btn btn-success" style="flex: 1; display: none;">🚀 Import Data</button>
+                <button id="closeBtn" onclick="closeImportModal()" class="btn btn-danger" style="flex: 1; display: none;">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT MEMBER MODAL -->
+    <div id="editMemberModal" class="edit-modal">
+        <div class="modal-content">
+            <h3>✏️ Edit Anggota</h3>
+            <input type="hidden" id="editMemberId">
+            <div class="form-grid">
+                <input type="text" id="editNama" placeholder="Nama Lengkap *">
+                <input type="text" id="editAlamat" placeholder="Alamat *">
+                <input type="text" id="editNoHp" placeholder="No. HP">
+                <input type="text" id="editJabatan" placeholder="Jabatan">
+                <select id="editStatus">
+                    <option value="aktif">Aktif</option>
+                    <option value="nonaktif">Nonaktif</option>
+                </select>
+                <div style="display:flex;gap:10px;">
+                    <button onclick="saveMemberEdit()" class="btn btn-primary" style="flex:1;">💾 Simpan</button>
+                    <button onclick="closeEditModal()" class="btn btn-danger" style="flex:1;">❌ Batal</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- EDIT USER MODAL -->
     <div id="editUserModal" class="edit-modal">
@@ -209,16 +488,44 @@
         <section class="section" id="members">
             <div class="section-header admin-only"><h2>👥 Data Anggota</h2></div>
             <div class="section-content">
+                <!-- TOMBOL IMPORT DATA -->
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button onclick="openImportModal()" class="btn btn-success" style="width: auto;">📁 Import Data</button>
+                    <button onclick="downloadTemplate()" class="btn btn-warning" style="width: auto;">📥 Download Template</button>
+                    <button onclick="exportMembers()" class="btn btn-primary" style="width: auto;">📤 Export Data</button>
+                </div>
+                
+                <!-- FORM TAMBAH ANGGOTA - FIELDS LENGKAP SESUAI SCREENSHOT -->
                 <div class="form-grid">
+                    <input type="text" id="no_kep" placeholder="No Kep. Keluarga">
+                    <input type="text" id="tgl_lahir" placeholder="Tgl Lahir (YYYY-MM-DD)">
                     <input type="text" id="nama" placeholder="Nama Lengkap *">
                     <input type="text" id="alamat" placeholder="Alamat *">
                     <input type="text" id="no_hp" placeholder="No. HP">
                     <input type="text" id="jabatan" placeholder="Jabatan">
+                    <input type="number" id="jumlah_anak" placeholder="Jumlah Anak" min="0" style="grid-column: span 2;">
+                    <textarea id="nama_anak" placeholder="Nama Anak (pisahkan dengan koma)" rows="2" style="grid-column: span 2;"></textarea>
+                    <input type="text" id="tgl_lahir_anak" placeholder="Tgl Lahir Anak (YYYY-MM-DD)">
+                    <input type="text" id="pendidikan_anak" placeholder="Pendidikan Anak">
+                    <input type="number" id="anggota_dewasa" placeholder="Anggota Dewasa" min="0">
                     <button onclick="addMember()" class="btn btn-primary">➕ Tambah</button>
                 </div>
                 <div class="table-responsive">
                     <table id="membersTable">
-                        <thead><tr><th>Nama</th><th>Alamat/HP</th><th>Jabatan</th><th>Status</th><th>Aksi</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th>No Kep</th>
+                                <th>Nama</th>
+                                <th>Tgl Lahir</th>
+                                <th>Alamat</th>
+                                <th>HP</th>
+                                <th>Jabatan</th>
+                                <th>Jml Anak</th>
+                                <th>Nama Anak</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -294,6 +601,18 @@
         let syncQueue = [], isSyncing = false;
         let members = [], attendance = [], finance = [], users = [];
         let appInitialized = false;
+        
+        // Import state
+        let currentStep = 1;
+        let importData = [];
+        let importFile = null;
+        let importStats = {
+            total: 0,
+            valid: 0,
+            duplicate: 0,
+            imported: 0,
+            errors: 0
+        };
 
         // Default users
         const defaultUsers = {
@@ -395,6 +714,359 @@
             }
         }
 
+        // --- IMPORT DATA FUNCTIONS ---
+        function openImportModal() {
+            if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa import data!');
+            document.getElementById('importModal').style.display = 'flex';
+            resetImportModal();
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').style.display = 'none';
+            resetImportModal();
+        }
+
+        function resetImportModal() {
+            currentStep = 1;
+            importData = [];
+            importFile = null;
+            importStats = { total: 0, valid: 0, duplicate: 0, imported: 0, errors: 0 };
+            
+            // Show step 1, hide others
+            document.getElementById('step1').style.display = 'block';
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('step3').style.display = 'none';
+            
+            // Reset button visibility
+            document.getElementById('prevBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'inline-block';
+            document.getElementById('importBtn').style.display = 'none';
+            document.getElementById('closeBtn').style.display = 'none';
+            
+            // Clear file info
+            document.getElementById('selectedFileName').textContent = '';
+            document.getElementById('previewBody').innerHTML = '';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressText').textContent = 'Menyiapkan...';
+            document.getElementById('progressDetails').textContent = '';
+            
+            // Reset stats
+            document.getElementById('totalRows').textContent = '0';
+            document.getElementById('validRows').textContent = '0';
+            document.getElementById('duplicateRows').textContent = '0';
+        }
+
+        function nextStep() {
+            if (currentStep === 1) {
+                if (!importFile) {
+                    alert('❌ Silakan pilih file terlebih dahulu!');
+                    return;
+                }
+                
+                // Parse file
+                parseImportFile();
+                
+                if (importData.length === 0) {
+                    alert('❌ Tidak ada data yang valid ditemukan dalam file!');
+                    return;
+                }
+                
+                // Update stats
+                document.getElementById('totalRows').textContent = importStats.total;
+                document.getElementById('validRows').textContent = importStats.valid;
+                document.getElementById('duplicateRows').textContent = importStats.duplicate;
+                
+                // Show preview
+                showDataPreview();
+                
+                // Move to step 2
+                document.getElementById('step1').style.display = 'none';
+                document.getElementById('step2').style.display = 'block';
+                document.getElementById('prevBtn').style.display = 'inline-block';
+                document.getElementById('nextBtn').style.display = 'none';
+                document.getElementById('importBtn').style.display = 'inline-block';
+                currentStep = 2;
+            }
+        }
+
+        function prevStep() {
+            if (currentStep === 2) {
+                document.getElementById('step2').style.display = 'none';
+                document.getElementById('step1').style.display = 'block';
+                document.getElementById('prevBtn').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+                document.getElementById('importBtn').style.display = 'none';
+                currentStep = 1;
+            }
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const validTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+            const fileExt = file.name.split('.').pop().toLowerCase();
+            
+            if (!validTypes.includes(file.type) && !['csv', 'xlsx', 'xls'].includes(fileExt)) {
+                alert('❌ Format file tidak didukung! Gunakan CSV atau Excel.');
+                return;
+            }
+            
+            importFile = file;
+            document.getElementById('selectedFileName').textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function parseImportFile() {
+            if (!importFile) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                
+                // Simple CSV parsing (for now)
+                const rows = content.split('\n').filter(row => row.trim() !== '');
+                
+                if (rows.length < 2) {
+                    alert('❌ File tidak memiliki data atau format tidak sesuai!');
+                    return;
+                }
+                
+                // Get headers
+                const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
+                
+                // Parse data rows
+                importData = [];
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i].split(',').map(cell => cell.trim());
+                    if (row.length < headers.length) continue;
+                    
+                    const memberData = {};
+                    headers.forEach((header, index) => {
+                        memberData[header] = row[index] || '';
+                    });
+                    
+                    // Validate required fields
+                    if (memberData['nama kepala keluarga'] && memberData['alamat']) {
+                        memberData.isValid = true;
+                    } else {
+                        memberData.isValid = false;
+                        importStats.errors++;
+                    }
+                    
+                    // Check for duplicates
+                    const isDuplicate = members.some(m => 
+                        m.nama?.toLowerCase() === memberData['nama kepala keluarga']?.toLowerCase() && 
+                        m.alamat?.toLowerCase() === memberData['alamat']?.toLowerCase()
+                    );
+                    
+                    memberData.isDuplicate = isDuplicate;
+                    if (isDuplicate) importStats.duplicate++;
+                    
+                    importData.push(memberData);
+                }
+                
+                importStats.total = importData.length;
+                importStats.valid = importData.filter(d => d.isValid).length;
+            };
+            
+            if (importFile.name.toLowerCase().endsWith('.csv')) {
+                reader.readAsText(importFile);
+            } else {
+                // For Excel files, we'd need a library like SheetJS
+                alert('⚠️ Untuk file Excel, pastikan sudah dikonversi ke CSV terlebih dahulu.');
+                // You can integrate SheetJS library for Excel support
+                // https://github.com/SheetJS/sheetjs
+            }
+        }
+
+        function showDataPreview() {
+            const previewBody = document.getElementById('previewBody');
+            previewBody.innerHTML = '';
+            
+            const previewData = importData.slice(0, 10); // Show first 10 rows
+            
+            previewData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${row['nama kepala keluarga'] || '-'}</td>
+                    <td>${row['tanggal lahir'] || '-'}</td>
+                    <td>${row['alamat'] || '-'}</td>
+                    <td>${row['jumlah anak'] || '0'}</td>
+                    <td>${row['nama anak'] || '-'}</td>
+                `;
+                
+                if (!row.isValid) {
+                    tr.style.backgroundColor = '#f8d7da';
+                } else if (row.isDuplicate) {
+                    tr.style.backgroundColor = '#fff3cd';
+                }
+                
+                previewBody.appendChild(tr);
+            });
+        }
+
+        async function startImport() {
+            if(currentUser.role !== 'admin') return;
+            
+            // Move to step 3
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('step3').style.display = 'block';
+            document.getElementById('prevBtn').style.display = 'none';
+            document.getElementById('importBtn').style.display = 'none';
+            document.getElementById('closeBtn').style.display = 'inline-block';
+            currentStep = 3;
+            
+            const overwrite = document.getElementById('overwriteData').checked;
+            const skipDuplicates = document.getElementById('skipDuplicates').checked;
+            
+            let importedCount = 0;
+            const totalToImport = importData.filter(d => d.isValid && (!d.isDuplicate || !skipDuplicates)).length;
+            
+            for (let i = 0; i < importData.length; i++) {
+                const row = importData[i];
+                
+                // Update progress
+                const progress = Math.round((i / importData.length) * 100);
+                document.getElementById('progressBar').style.width = progress + '%';
+                document.getElementById('progressText').textContent = `Memproses ${i + 1} dari ${importData.length} data...`;
+                document.getElementById('progressDetails').textContent = `Sedang mengimport: ${row['nama kepala keluarga']}`;
+                
+                if (!row.isValid) continue;
+                if (skipDuplicates && row.isDuplicate) continue;
+                
+                // Create member object
+                const newMember = {
+                    id: Date.now() + i,
+                    no_kep: row['no'] || '',
+                    nama: row['nama kepala keluarga'] || '',
+                    tgl_lahir: row['tanggal lahir'] || '',
+                    alamat: row['alamat'] || '',
+                    jumlah_anak: parseInt(row['jumlah anak']) || 0,
+                    nama_anak: row['nama anak'] || '',
+                    tgl_lahir_anak: row['tanggal lahir anak'] || '',
+                    pendidikan_anak: row['pendidikan anak'] || '',
+                    anggota_dewasa: parseInt(row['anggota dewasa']) || 0,
+                    status: 'aktif',
+                    createdAt: Date.now(),
+                    imported: true
+                };
+                
+                // Check if exists
+                const existingIndex = members.findIndex(m => 
+                    m.nama?.toLowerCase() === newMember.nama.toLowerCase() && 
+                    m.alamat?.toLowerCase() === newMember.alamat.toLowerCase()
+                );
+                
+                if (existingIndex >= 0) {
+                    if (overwrite) {
+                        members[existingIndex] = { ...members[existingIndex], ...newMember };
+                    }
+                } else {
+                    members.unshift(newMember);
+                    queueAction('addMember', newMember);
+                }
+                
+                importedCount++;
+                
+                // Small delay for UI
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            
+            // Final update
+            document.getElementById('progressBar').style.width = '100%';
+            document.getElementById('progressText').textContent = '✅ Import selesai!';
+            document.getElementById('progressDetails').textContent = `${importedCount} data berhasil diimport`;
+            
+            // Save to storage
+            localStorage.setItem('gbp_members', JSON.stringify(members));
+            
+            // Update UI
+            setTimeout(() => {
+                renderAll();
+                alert(`✅ Import data selesai!\n${importedCount} data berhasil diimport.`);
+            }, 500);
+        }
+
+        function downloadTemplate() {
+            // Create CSV template
+            const headers = ['NO', 'NAMA KEPALA KELUARGA', 'TANGGAL LAHIR', 'ALAMAT', 'JUMLAH ANAK', 'NAMA ANAK', 'TANGGAL LAHIR ANAK', 'PENDIDIKAN ANAK', 'ANGGOTA DEWASA'];
+            const exampleData = ['1', 'Joko Widodo', '1961-06-21', 'Jl. Contoh No. 123', '2', 'Anak 1, Anak 2', '1990-01-01, 1992-02-02', 'S1, SMA', '3'];
+            
+            let csvContent = headers.join(',') + '\n';
+            csvContent += exampleData.join(',');
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'template_data_anggota.csv');
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportMembers() {
+            if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa export data!');
+            
+            // Prepare data
+            const headers = ['NO', 'NAMA KEPALA KELUARGA', 'TANGGAL LAHIR', 'ALAMAT', 'NO. HP', 'JABATAN', 'JUMLAH ANAK', 'NAMA ANAK', 'TANGGAL LAHIR ANAK', 'PENDIDIKAN ANAK', 'ANGGOTA DEWASA', 'STATUS'];
+            
+            let csvContent = headers.join(',') + '\n';
+            
+            members.forEach((member, index) => {
+                const row = [
+                    index + 1,
+                    member.nama || '',
+                    member.tgl_lahir || '',
+                    member.alamat || '',
+                    member.no_hp || '',
+                    member.jabatan || '',
+                    member.jumlah_anak || '0',
+                    member.nama_anak || '',
+                    member.tgl_lahir_anak || '',
+                    member.pendidikan_anak || '',
+                    member.anggota_dewasa || '0',
+                    member.status || 'aktif'
+                ];
+                
+                // Escape commas and quotes
+                csvContent += row.map(cell => {
+                    if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"'))) {
+                        return `"${cell.replace(/"/g, '""')}"`;
+                    }
+                    return cell;
+                }).join(',') + '\n';
+            });
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            const date = new Date().toISOString().split('T')[0];
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `data_anggota_${date}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         // --- USER MANAGEMENT (ADMIN ONLY) ---
         function addUser() {
             if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa menambah user!');
@@ -467,15 +1139,51 @@
             alert('✅ User dihapus!');
         }
 
-        function closeEditModal() {
-            document.getElementById('editUserModal').style.display = 'none';
+        // --- MEMBER MANAGEMENT - EDIT MODAL FUNCTIONS ---
+        function editMember(memberId) {
+            if(currentUser.role !== 'admin') return;
+            const member = members.find(m => m.id === memberId);
+            if(!member) return;
+
+            document.getElementById('editMemberId').value = member.id;
+            document.getElementById('editNama').value = member.nama || '';
+            document.getElementById('editAlamat').value = member.alamat || '';
+            document.getElementById('editNoHp').value = member.no_hp || '';
+            document.getElementById('editJabatan').value = member.jabatan || '';
+            document.getElementById('editStatus').value = member.status || 'aktif';
+            document.getElementById('editMemberModal').style.display = 'flex';
         }
 
-        function saveUsersToStorage() {
-            localStorage.setItem('gbp_users', JSON.stringify(users));
-            if(connectionStatus === 'online' && currentUser.role === 'admin') {
-                db.ref('users').set(users);
-            }
+        function saveMemberEdit() {
+            if(currentUser.role !== 'admin') return;
+            const memberId = parseInt(document.getElementById('editMemberId').value);
+            const nama = document.getElementById('editNama').value.trim();
+            const alamat = document.getElementById('editAlamat').value.trim();
+            
+            if(!nama || !alamat) return alert('❌ Nama dan Alamat wajib diisi!');
+
+            const memberIdx = members.findIndex(m => m.id === memberId);
+            if(memberIdx === -1) return;
+
+            members[memberIdx] = {
+                ...members[memberIdx],
+                nama, alamat,
+                no_hp: document.getElementById('editNoHp').value.trim(),
+                jabatan: document.getElementById('editJabatan').value.trim(),
+                status: document.getElementById('editStatus').value,
+                updatedAt: Date.now()
+            };
+
+            queueAction('updateMember', members[memberIdx]);
+            localStorage.setItem('gbp_members', JSON.stringify(members));
+            renderAll();
+            closeEditModal();
+            alert('✅ Anggota berhasil diupdate!');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editMemberModal').style.display = 'none';
+            document.getElementById('editUserModal').style.display = 'none';
         }
 
         function loadUsersTable() {
@@ -496,6 +1204,13 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        function saveUsersToStorage() {
+            localStorage.setItem('gbp_users', JSON.stringify(users));
+            if(connectionStatus === 'online' && currentUser.role === 'admin') {
+                db.ref('users').set(users);
+            }
         }
 
         // --- DATA SYSTEM (ALL FEATURES MAINTAINED) ---
@@ -550,16 +1265,25 @@
             document.getElementById('saldoKas').innerText = 'Rp ' + total.toLocaleString('id-ID');
         }
 
+        // *** MODIFIED: TABLE HEADER & DATA SESUAI SCREENSHOT DENGAN KOLOM BARU ***
         function loadMembersTable() {
             const tbody = document.querySelector('#membersTable tbody');
             tbody.innerHTML = '';
             members.forEach(m => {
                 const row = `<tr>
+                    <td>${m.no_kep || '-'}</td>
                     <td><strong>${m.nama}</strong></td>
-                    <td>${m.alamat}<br><small style="color:#666">${m.hp || ''}</small></td>
+                    <td>${m.tgl_lahir || '-'}</td>
+                    <td>${m.alamat}</td>
+                    <td>${m.no_hp || '-'}</td>
                     <td>${m.jabatan || 'Anggota'}</td>
+                    <td>${m.jumlah_anak || '0'}</td>
+                    <td>${m.nama_anak || '-'}</td>
                     <td><span class="status-badge ${m.status === 'aktif' ? 'status-aktif' : 'status-nonaktif'}">${m.status}</span></td>
-                    <td><button onclick="toggleMember(${m.id})" class="btn btn-danger" style="padding:5px 10px;font-size:10px;width:auto;">${m.status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan'}</button></td>
+                    <td>
+                        <button onclick="editMember(${m.id})" class="btn btn-warning btn-sm">Edit</button>
+                        <button onclick="toggleMember(${m.id})" class="btn btn-danger btn-sm">${m.status === 'aktif' ? 'Nonaktif' : 'Aktif'}</button>
+                    </td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
@@ -607,15 +1331,7 @@
             sel.value = currentVal;
         }
 
-        // --- ACTIONS (WITH ADMIN CHECK) ---
-        function queueAction(action, data) {
-            if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa sync data!');
-            const queueItem = {action, data, timestamp: Date.now(), id: Date.now()};
-            syncQueue.unshift(queueItem);
-            localStorage.setItem('gbp_syncQueue', JSON.stringify(syncQueue));
-            if (connectionStatus === 'online' && !isSyncing) processSyncQueue();
-        }
-
+        // *** MODIFIED: addMember() DENGAN FIELDS BARU ***
         function addMember() {
             if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa tambah anggota!');
             const nama = document.getElementById('nama').value.trim();
@@ -624,9 +1340,16 @@
 
             const newMember = {
                 id: Date.now(),
+                no_kep: document.getElementById('no_kep').value.trim(),
+                tgl_lahir: document.getElementById('tgl_lahir').value.trim(),
                 nama, alamat,
-                hp: document.getElementById('no_hp').value.trim(),
+                no_hp: document.getElementById('no_hp').value.trim(),
                 jabatan: document.getElementById('jabatan').value.trim() || 'Anggota',
+                jumlah_anak: parseInt(document.getElementById('jumlah_anak').value) || 0,
+                nama_anak: document.getElementById('nama_anak').value.trim(),
+                tgl_lahir_anak: document.getElementById('tgl_lahir_anak').value.trim(),
+                pendidikan_anak: document.getElementById('pendidikan_anak').value.trim(),
+                anggota_dewasa: parseInt(document.getElementById('anggota_dewasa').value) || 0,
                 status: 'aktif',
                 createdAt: Date.now()
             };
@@ -635,10 +1358,18 @@
             queueAction('addMember', newMember);
             localStorage.setItem('gbp_members', JSON.stringify(members));
             
+            // Clear form
+            document.getElementById('no_kep').value = '';
+            document.getElementById('tgl_lahir').value = '';
             document.getElementById('nama').value = '';
             document.getElementById('alamat').value = '';
             document.getElementById('no_hp').value = '';
             document.getElementById('jabatan').value = '';
+            document.getElementById('jumlah_anak').value = '';
+            document.getElementById('nama_anak').value = '';
+            document.getElementById('tgl_lahir_anak').value = '';
+            document.getElementById('pendidikan_anak').value = '';
+            document.getElementById('anggota_dewasa').value = '';
             
             renderAll();
             alert('✅ Anggota ditambah!');
@@ -702,6 +1433,7 @@
             alert('✅ Transaksi tersimpan!');
         }
 
+        // *** MODIFIED: Support updateMember di sync ***
         async function processSyncQueue() {
             if (currentUser.role !== 'admin' || isSyncing || syncQueue.length === 0 || connectionStatus !== 'online') return;
             
@@ -733,6 +1465,17 @@
                 case 'toggleMember':
                     await db.ref(`members/${data.id}`).update({status: data.status});
                     break;
+                case 'updateMember':  // *** NEW: Support edit member ***
+                    await db.ref(`members/${data.id}`).update({
+                        no_kep: data.no_kep,
+                        tgl_lahir: data.tgl_lahir,
+                        nama: data.nama,
+                        alamat: data.alamat,
+                        no_hp: data.no_hp,
+                        jabatan: data.jabatan,
+                        status: data.status
+                    });
+                    break;
                 case 'addAttendance':
                     await db.ref('attendance').push(data);
                     break;
@@ -753,6 +1496,14 @@
             }
         }
 
+        function queueAction(action, data) {
+            if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa sync data!');
+            const queueItem = {action, data, timestamp: Date.now(), id: Date.now()};
+            syncQueue.unshift(queueItem);
+            localStorage.setItem('gbp_syncQueue', JSON.stringify(syncQueue));
+            if (connectionStatus === 'online' && !isSyncing) processSyncQueue();
+        }
+
         function showSection(id, element) {
             document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -768,7 +1519,60 @@
             currentUser = JSON.parse(savedUser);
             initApp();
         }
+        
+        // Drag and drop for import
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropArea = document.getElementById('dropArea');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.style.background = '#f0f4ff';
+                dropArea.style.borderColor = '#5a6fd6';
+            }
+            
+            function unhighlight() {
+                dropArea.style.background = '';
+                dropArea.style.borderColor = '#667eea';
+            }
+            
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length) {
+                    const file = files[0];
+                    const validTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+                    const fileExt = file.name.split('.').pop().toLowerCase();
+                    
+                    if (!validTypes.includes(file.type) && !['csv', 'xlsx', 'xls'].includes(fileExt)) {
+                        alert('❌ Format file tidak didukung! Gunakan CSV atau Excel.');
+                        return;
+                    }
+                    
+                    importFile = file;
+                    document.getElementById('selectedFileName').textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+                    document.getElementById('fileInput').files = dt.files;
+                }
+            }
+        });
     </script>
 </body>
 </html>
-
