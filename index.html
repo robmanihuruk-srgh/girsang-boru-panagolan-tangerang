@@ -16,6 +16,7 @@
         .status-dot{width:8px;height:8px;border-radius:50%;background:#28a745;}
         .status-offline{background:#dc3545;}
         .status-syncing{background:#ffc107;animation:pulse 1.5s infinite;}
+        .status-admin-only{background:#17a2b8;color:white;}
 
         @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
 
@@ -23,6 +24,7 @@
         .nav-links{display:flex;justify-content:center;gap:15px;white-space:nowrap;min-width:max-content;}
         .nav-links a{color:#495057;text-decoration:none;font-weight:500;padding:8px 16px;border-radius:20px;transition:all 0.3s;cursor:pointer;font-size:14px;}
         .nav-links a:hover,.nav-links a.active{background:#667eea;color:white;}
+        .nav-users{display:none;}
 
         .container{max-width:1200px;margin:20px auto;padding:0 15px;}
 
@@ -35,20 +37,24 @@
         .section.active{display:block;}
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 
-        .section-header{padding:20px;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:white;}
+        .section-header{padding:20px;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:white;position:relative;}
+        .section-header.admin-only::after{content:'👑 ADMIN ONLY';position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:12px;background:#17a2b8;padding:4px 8px;border-radius:12px;}
         .section-header h2{font-size:18px;margin:0;}
         .section-content{padding:20px;}
 
         .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:20px;background:#f8f9fa;padding:20px;border-radius:10px;}
         input,select,textarea{width:100%;padding:10px;border:1px solid #ced4da;border-radius:6px;font-size:14px;}
-        input:focus,select:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1);}
+        input:focus,select:focus,textarea:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1);}
 
         .btn{padding:10px 20px;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;transition:0.3s;width:100%;}
         .btn-primary{background:#667eea;color:white;}
         .btn-primary:hover{background:#5a6fd6;}
         .btn-danger{background:#ff6b6b;color:white;}
-        .btn-sync{background:#28a745;color:white;margin-top:10px;}
-        .btn-sync:hover{background:#218838;}
+        .btn-success{background:#28a745;color:white;}
+        .btn-warning{background:#ffc107;color:#212529;}
+        .btn-sync{background:#17a2b8;color:white;margin-top:10px;}
+        .btn-sync:hover{background:#138496;}
+        .btn-sm{padding:6px 12px;font-size:12px;width:auto;}
 
         .table-responsive{overflow-x:auto;}
         table{width:100%;border-collapse:collapse;font-size:14px;}
@@ -68,14 +74,44 @@
 
         .config-status{background:#d4edda;padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid #28a745;}
         .config-status h3{margin:0 0 10px 0;color:#155724;}
+        .user-info{display:flex;align-items:center;gap:10px;background:#e9ecef;padding:10px;border-radius:8px;margin-bottom:15px;}
+        .user-role-badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;}
+        .role-admin{background:#17a2b8;color:white;}
+        .role-user{background:#6c757d;color:white;}
 
-        @media(max-width:768px){.nav-links{justify-content:flex-start;padding-bottom:5px;}.btn{width:100%;}}
+        .users-section{background:#f8f9fa;padding:20px;border-radius:12px;margin-bottom:20px;}
+        .user-row{display:flex;align-items:center;justify-content:space-between;padding:12px;background:white;margin-bottom:8px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05);}
+        .user-actions{display:flex;gap:5px;flex-wrap:wrap;}
+        .edit-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:3000;}
+        .modal-content{background:white;padding:30px;border-radius:12px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;}
+
+        @media(max-width:768px){.nav-links{justify-content:flex-start;padding-bottom:5px;}.btn{width:100% !important;}.user-row{flex-direction:column;gap:10px;text-align:center;}.user-actions{justify-content:center;}}
     </style>
 </head>
 <body>
     <!-- 🔥 FIREBASE SDK (CDN) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+    <!-- EDIT USER MODAL -->
+    <div id="editUserModal" class="edit-modal">
+        <div class="modal-content">
+            <h3>✏️ Edit Pengguna</h3>
+            <input type="hidden" id="editUserId">
+            <div class="form-grid" style="grid-template-columns:1fr;">
+                <input type="text" id="editUsername" placeholder="Username *">
+                <input type="password" id="editPassword" placeholder="Password Baru (kosongkan jika tidak diubah)">
+                <select id="editRole">
+                    <option value="user">User Biasa</option>
+                    <option value="admin">Administrator</option>
+                </select>
+                <div style="display:flex;gap:10px;">
+                    <button onclick="saveUserEdit()" class="btn btn-primary" style="flex:1;">💾 Simpan</button>
+                    <button onclick="closeEditModal()" class="btn btn-danger" style="flex:1;">❌ Batal</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="loginOverlay" class="login-overlay">
         <div class="login-box">
@@ -84,7 +120,10 @@
             <input type="text" id="username" placeholder="Username" style="margin-bottom:10px;">
             <input type="password" id="password" placeholder="Password" style="margin-bottom:20px;">
             <button onclick="login()" class="btn btn-primary">Masuk</button>
-            <p style="margin-top:20px;font-size:12px;color:#aaa;">Demo: admin / admin123</p>
+            <p style="margin-top:20px;font-size:12px;color:#aaa;">
+                Admin: <strong>admin</strong> / <strong>admin123</strong><br>
+                User: <strong>user1</strong> / <strong>user123</strong>
+            </p>
         </div>
     </div>
 
@@ -94,7 +133,7 @@
             <span id="statusText">Memuat...</span>
         </div>
         <h1>🏛️ Girsang Boru Panagolan</h1>
-        <p>Dashboard Manajemen & Keuangan - Offline + Auto Sync ✅</p>
+        <p id="headerSubtitle">Dashboard Manajemen & Keuangan - Offline + Auto Sync ✅</p>
         <div class="close-btn-logout" onclick="logout()" title="Keluar">⏻</div>
     </div>
 
@@ -104,10 +143,17 @@
             <a onclick="showSection('members', this)">👥 Anggota</a>
             <a onclick="showSection('attendance', this)">📋 Absensi</a>
             <a onclick="showSection('finance', this)">💰 Keuangan</a>
+            <a id="usersNav" class="nav-users" onclick="showSection('users', this)">👨‍💼 Pengguna</a>
         </div>
     </nav>
 
     <div class="container" id="mainContainer" style="display:none;">
+        <!-- User Info Bar -->
+        <div id="userInfoBar" class="user-info" style="display:none;">
+            <span>👤 <strong id="currentUsername"></strong></span>
+            <span class="user-role-badge" id="currentRole"></span>
+        </div>
+
         <!-- ✅ FIREBASE CONFIG SUDAH TERINSTAL -->
         <div class="config-status">
             <h3>✅ Firebase Terhubung!</h3>
@@ -115,6 +161,27 @@
             <strong>Database:</strong> Realtime Database (asia-southeast1)<br>
             <small>Status: Offline-first + Auto Sync Multi-Device</small></p>
         </div>
+
+        <!-- USER MANAGEMENT SECTION (ADMIN ONLY) -->
+        <section class="section" id="users">
+            <div class="section-header admin-only"><h2>👨‍💼 Manajemen Pengguna</h2></div>
+            <div class="section-content">
+                <div class="users-section">
+                    <h3>Tambah Pengguna Baru</h3>
+                    <div class="form-grid">
+                        <input type="text" id="newUsername" placeholder="Username *">
+                        <input type="password" id="newPassword" placeholder="Password *">
+                        <select id="newRole">
+                            <option value="user">User Biasa</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                        <button onclick="addUser()" class="btn btn-success">➕ Tambah User</button>
+                    </div>
+                </div>
+                <h3>Daftar Pengguna</h3>
+                <div id="usersList"></div>
+            </div>
+        </section>
 
         <section class="section active" id="dashboard">
             <div class="section-header"><h2>📊 Ringkasan Data</h2></div>
@@ -139,7 +206,7 @@
         </section>
 
         <section class="section" id="members">
-            <div class="section-header"><h2>👥 Data Anggota</h2></div>
+            <div class="section-header admin-only"><h2>👥 Data Anggota</h2></div>
             <div class="section-content">
                 <div class="form-grid">
                     <input type="text" id="nama" placeholder="Nama Lengkap *">
@@ -158,7 +225,7 @@
         </section>
 
         <section class="section" id="attendance">
-            <div class="section-header"><h2>📋 Input Absensi</h2></div>
+            <div class="section-header admin-only"><h2>📋 Input Absensi</h2></div>
             <div class="section-content">
                 <div class="form-grid">
                     <select id="member_id_att"><option value="">-- Pilih Anggota --</option></select>
@@ -181,7 +248,7 @@
         </section>
 
         <section class="section" id="finance">
-            <div class="section-header"><h2>💰 Kas & Keuangan</h2></div>
+            <div class="section-header admin-only"><h2>💰 Kas & Keuangan</h2></div>
             <div class="section-content">
                 <div class="form-grid">
                     <input type="text" id="deskripsi_fin" placeholder="Keterangan Transaksi *">
@@ -205,7 +272,7 @@
     </div>
 
     <script>
-        // 🔥 FIREBASE CONFIG ANDA - SUDAH TERINSTAL!
+        // 🔥 FIREBASE CONFIG - SUDAH TERINSTAL
         const firebaseConfig = {
             apiKey: "AIzaSyCqF5VG2T03yaHOAq8dPhtvgMYrbVq-DIs",
             authDomain: "girsangborupanagolantangerang.firebaseapp.com",
@@ -217,62 +284,78 @@
             measurementId: "G-716P2TK99Y"
         };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // --- GLOBAL VARIABLES ---
+        // --- GLOBAL STATE ---
+        let currentUser = {username: '', role: 'user'};
         let connectionStatus = 'offline';
-        let syncQueue = [];
-        let isSyncing = false;
-        let members = [], attendance = [], finance = [];
+        let syncQueue = [], isSyncing = false;
+        let members = [], attendance = [], finance = [], users = [];
         let appInitialized = false;
 
-        // --- STATUS MONITOR ---
+        // Default users
+        const defaultUsers = {
+            admin: {username: 'admin', password: 'admin123', role: 'admin'},
+            user1: {username: 'user1', password: 'user123', role: 'user'}
+        };
+
+        // --- CONNECTION MONITOR (ADMIN ONLY) ---
         db.ref('.info/connected').on('value', (snap) => {
             if (snap.val() === true && connectionStatus !== 'online') {
                 connectionStatus = 'online';
-                updateStatus('🟢 Online & Sinkron', '#28a745');
-                if(appInitialized) processSyncQueue();
+                if(currentUser.role === 'admin') {
+                    updateStatus('🟢 Online & Sinkron', '#28a745');
+                    if(appInitialized) processSyncQueue();
+                }
             } else if (snap.val() === false && connectionStatus !== 'offline') {
                 connectionStatus = 'offline';
-                updateStatus('🔴 Offline (Lokal OK)', '#dc3545');
+                if(currentUser.role === 'admin') updateStatus('🔴 Offline (Lokal OK)', '#dc3545');
             }
         });
 
         function updateStatus(text, color) {
-            document.getElementById('statusText').textContent = text;
-            document.getElementById('statusDot').style.background = color;
-            document.getElementById('statusDot').className = color === '#ffc107' ? 'status-dot status-syncing' : 'status-dot';
+            if(currentUser.role === 'admin') {
+                document.getElementById('statusText').textContent = text;
+                document.getElementById('statusDot').style.background = color;
+                document.getElementById('statusDot').className = color === '#ffc107' ? 'status-dot status-syncing' : 'status-dot';
+            }
         }
 
-        updateStatus('🟢 Siap!', '#28a745');
-
-        // --- LOGIN SYSTEM ---
+        // --- AUTH SYSTEM ---
         function login() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            if(u === 'admin' && p === 'admin123') {
-                localStorage.setItem('gbp_logged', 'true');
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            // Check users array first, then defaults
+            const user = users.find(u => u.username === username && u.password === password) || 
+                        (defaultUsers[username] && defaultUsers[username].password === password ? defaultUsers[username] : null);
+
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('gbp_currentUser', JSON.stringify(currentUser));
                 initApp();
             } else {
-                alert('❌ Login Gagal! Username: admin, Password: admin123');
+                alert('❌ Login Gagal! Cek username/password\nAdmin: admin/admin123\nUser: user1/user123');
             }
         }
 
         function logout() {
             if(confirm('Keluar dari sistem?')) {
                 localStorage.clear();
+                currentUser = {username: '', role: 'user'};
                 location.reload();
             }
         }
 
-        // --- MAIN APP INIT ---
+        // --- APP INIT ---
         async function initApp() {
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('header').style.display = 'block';
             document.getElementById('navbar').style.display = 'block';
             document.getElementById('mainContainer').style.display = 'block';
+
+            updateUserUI();
 
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('tanggal_att').value = today;
@@ -282,67 +365,147 @@
             appInitialized = true;
         }
 
-        // --- DATA SYNC SYSTEM ---
-        function queueAction(action, data) {
-            const queueItem = {action, data, timestamp: Date.now(), id: Date.now()};
-            syncQueue.unshift(queueItem);
-            localStorage.setItem('gbp_syncQueue', JSON.stringify(syncQueue));
-            
-            if (connectionStatus === 'online' && !isSyncing) {
-                processSyncQueue();
+        function updateUserUI() {
+            document.getElementById('currentUsername').textContent = currentUser.username;
+            const roleBadge = document.getElementById('currentRole');
+            roleBadge.textContent = currentUser.role.toUpperCase();
+            roleBadge.className = `user-role-badge role-${currentUser.role}`;
+            document.getElementById('userInfoBar').style.display = 'flex';
+
+            document.getElementById('headerSubtitle').textContent = currentUser.role === 'admin' ? 
+                'Dashboard Admin - Full Access + Sync' : 'Dashboard User - Read Only';
+
+            // Show/hide admin features
+            const adminNav = document.getElementById('usersNav');
+            const adminElements = document.querySelectorAll('.admin-only');
+            if(currentUser.role === 'admin') {
+                adminNav.style.display = 'inline-block';
+                adminElements.forEach(el => el.style.display = 'block');
+                document.getElementById('statusIndicator').style.display = 'flex';
+                updateStatus('🟢 Siap!', '#28a745');
+            } else {
+                adminNav.style.display = 'none';
+                adminElements.forEach(el => el.style.display = 'none');
+                document.getElementById('statusIndicator').style.display = 'none';
             }
         }
 
-        async function processSyncQueue() {
-            if (isSyncing || syncQueue.length === 0 || connectionStatus !== 'online') return;
+        // --- USER MANAGEMENT (ADMIN ONLY) ---
+        function addUser() {
+            if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa menambah user!');
+
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newPassword').value;
+            const role = document.getElementById('newRole').value;
+
+            if(!username || !password) return alert('❌ Username dan password wajib diisi!');
+            if(users.find(u => u.username === username)) return alert('❌ Username sudah ada!');
+
+            const newUser = {
+                id: Date.now(),
+                username, password, role,
+                createdAt: Date.now(),
+                createdBy: currentUser.username
+            };
+
+            users.push(newUser);
+            saveUsersToStorage();
+            loadUsersTable();
             
-            isSyncing = true;
-            updateStatus('🔄 Sinkron ' + syncQueue.length + '...', '#ffc107');
-            
-            while (syncQueue.length > 0) {
-                const item = syncQueue.shift();
-                try {
-                    await executeFirebaseAction(item);
-                    localStorage.setItem('gbp_syncQueue', JSON.stringify(syncQueue));
-                } catch (e) {
-                    console.error('Sync failed:', e);
-                    syncQueue.unshift(item);
-                    break;
-                }
-            }
-            
-            isSyncing = false;
-            updateStatus('🟢 Sinkron Selesai', '#28a745');
-            localStorage.setItem('gbp_lastSync', Date.now().toString());
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+            alert('✅ User baru ditambahkan!');
         }
 
-        async function executeFirebaseAction(item) {
-            const {action, data} = item;
-            switch(action) {
-                case 'addMember':
-                    await db.ref('members').push(data);
-                    break;
-                case 'toggleMember':
-                    await db.ref(`members/${data.id}`).update({status: data.status});
-                    break;
-                case 'addAttendance':
-                    await db.ref('attendance').push(data);
-                    break;
-                case 'addFinance':
-                    await db.ref('finance').push(data);
-                    break;
+        function editUser(userId) {
+            if(currentUser.role !== 'admin') return;
+            const user = users.find(u => u.id === userId);
+            if(!user) return;
+
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editUsername').value = user.username;
+            document.getElementById('editPassword').value = '';
+            document.getElementById('editRole').value = user.role;
+            document.getElementById('editUserModal').style.display = 'flex';
+        }
+
+        function saveUserEdit() {
+            if(currentUser.role !== 'admin') return;
+            const userId = parseInt(document.getElementById('editUserId').value);
+            const username = document.getElementById('editUsername').value.trim();
+            const password = document.getElementById('editPassword').value;
+            const role = document.getElementById('editRole').value;
+
+            if(!username) return alert('❌ Username wajib diisi!');
+
+            const userIdx = users.findIndex(u => u.id === userId);
+            if(userIdx === -1) return;
+
+            users[userIdx].username = username;
+            if(password) users[userIdx].password = password;
+            users[userIdx].role = role;
+            users[userIdx].updatedAt = Date.now();
+
+            saveUsersToStorage();
+            loadUsersTable();
+            closeEditModal();
+            alert('✅ User berhasil diupdate!');
+        }
+
+        function deleteUser(userId) {
+            if(currentUser.role !== 'admin') return;
+            if(!confirm('Hapus user ini? Data tidak bisa dikembalikan!')) return;
+
+            users = users.filter(u => u.id !== userId);
+            saveUsersToStorage();
+            loadUsersTable();
+            alert('✅ User dihapus!');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editUserModal').style.display = 'none';
+        }
+
+        function saveUsersToStorage() {
+            localStorage.setItem('gbp_users', JSON.stringify(users));
+            if(connectionStatus === 'online' && currentUser.role === 'admin') {
+                db.ref('users').set(users);
             }
         }
 
+        function loadUsersTable() {
+            const container = document.getElementById('usersList');
+            if(!container) return;
+            
+            container.innerHTML = users.map(user => `
+                <div class="user-row">
+                    <div>
+                        <strong>${user.username}</strong> 
+                        <span style="color:#666;font-size:12px;">(${user.role})</span>
+                        ${user.createdBy ? `<br><small>Dibuat: ${new Date(user.createdAt).toLocaleDateString('id-ID')}</small>` : ''}
+                        ${user.updatedAt ? `<br><small>Update: ${new Date(user.updatedAt).toLocaleDateString('id-ID')}</small>` : ''}
+                    </div>
+                    <div class="user-actions">
+                        <button onclick="editUser(${user.id})" class="btn btn-warning btn-sm">Edit</button>
+                        <button onclick="deleteUser(${user.id})" class="btn btn-danger btn-sm">Hapus</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- DATA SYSTEM (ALL FEATURES MAINTAINED) ---
         async function loadAllData() {
-            // Load local first (offline support)
+            // Load users
+            users = JSON.parse(localStorage.getItem('gbp_users')) || Object.values(defaultUsers);
+            
+            // Load other data
             members = JSON.parse(localStorage.getItem('gbp_members')) || [];
             attendance = JSON.parse(localStorage.getItem('gbp_attendance')) || [];
             finance = JSON.parse(localStorage.getItem('gbp_finance')) || [];
             syncQueue = JSON.parse(localStorage.getItem('gbp_syncQueue')) || [];
 
-            // Sync from Firebase if online
-            if (connectionStatus === 'online') {
+            // Admin sync from Firebase
+            if(currentUser.role === 'admin' && connectionStatus === 'online') {
                 try {
                     const snapshot = await db.ref().once('value');
                     if (snapshot.exists()) {
@@ -350,20 +513,22 @@
                         if (data.members) members = Object.values(data.members).map(m => ({...m, id: m.id || Date.now()}));
                         if (data.attendance) attendance = Object.values(data.attendance);
                         if (data.finance) finance = Object.values(data.finance);
-                        
-                        localStorage.setItem('gbp_members', JSON.stringify(members));
-                        localStorage.setItem('gbp_attendance', JSON.stringify(attendance));
-                        localStorage.setItem('gbp_finance', JSON.stringify(finance));
+                        if (data.users) users = Object.values(data.users);
                     }
+                    localStorage.setItem('gbp_members', JSON.stringify(members));
+                    localStorage.setItem('gbp_attendance', JSON.stringify(attendance));
+                    localStorage.setItem('gbp_finance', JSON.stringify(finance));
+                    localStorage.setItem('gbp_users', JSON.stringify(users));
                 } catch(e) {
-                    console.error('Firebase sync failed:', e);
+                    console.error('Sync failed:', e);
                 }
             }
 
             renderAll();
+            if(currentUser.role === 'admin') loadUsersTable();
         }
 
-        // --- RENDER FUNCTIONS ---
+        // --- ALL EXISTING FUNCTIONS MAINTAINED ---
         function renderAll() {
             loadDashboard();
             loadMembersTable();
@@ -437,8 +602,17 @@
             sel.value = currentVal;
         }
 
-        // --- ACTIONS ---
+        // --- ACTIONS (WITH ADMIN CHECK) ---
+        function queueAction(action, data) {
+            if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa sync data!');
+            const queueItem = {action, data, timestamp: Date.now(), id: Date.now()};
+            syncQueue.unshift(queueItem);
+            localStorage.setItem('gbp_syncQueue', JSON.stringify(syncQueue));
+            if (connectionStatus === 'online' && !isSyncing) processSyncQueue();
+        }
+
         function addMember() {
+            if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa tambah anggota!');
             const nama = document.getElementById('nama').value.trim();
             const alamat = document.getElementById('alamat').value.trim();
             if(!nama || !alamat) return alert('❌ Nama dan Alamat wajib diisi!');
@@ -462,10 +636,11 @@
             document.getElementById('jabatan').value = '';
             
             renderAll();
-            alert('✅ Anggota ditambah! ' + (connectionStatus === 'online' ? 'Auto sync...' : '(akan sync saat online)'));
+            alert('✅ Anggota ditambah!');
         }
 
         function toggleMember(id) {
+            if(currentUser.role !== 'admin') return;
             const idx = members.findIndex(m => m.id === id);
             if(idx > -1) {
                 members[idx].status = members[idx].status === 'aktif' ? 'nonaktif' : 'aktif';
@@ -476,6 +651,7 @@
         }
 
         function addAttendance() {
+            if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa input absensi!');
             const mid = document.getElementById('member_id_att').value;
             const tgl = document.getElementById('tanggal_att').value;
             if(!mid || !tgl) return alert('❌ Pilih anggota dan tanggal!');
@@ -493,10 +669,11 @@
             queueAction('addAttendance', newAtt);
             localStorage.setItem('gbp_attendance', JSON.stringify(attendance));
             renderAll();
-            alert('✅ Absensi tersimpan! ' + (connectionStatus === 'online' ? 'Auto sync...' : '(akan sync saat online)'));
+            alert('✅ Absensi tersimpan!');
         }
 
         function addFinance() {
+            if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa input keuangan!');
             const desc = document.getElementById('deskripsi_fin').value.trim();
             const jml = document.getElementById('jumlah_fin').value;
             if(!desc || !jml) return alert('❌ Keterangan dan nominal wajib diisi!');
@@ -517,10 +694,51 @@
             document.getElementById('deskripsi_fin').value = '';
             document.getElementById('jumlah_fin').value = '';
             renderAll();
-            alert('✅ Transaksi tersimpan! ' + (connectionStatus === 'online' ? 'Auto sync...' : '(akan sync saat online)'));
+            alert('✅ Transaksi tersimpan!');
+        }
+
+        async function processSyncQueue() {
+            if (currentUser.role !== 'admin' || isSyncing || syncQueue.length === 0 || connectionStatus !== 'online') return;
+            
+            isSyncing = true;
+            updateStatus('🔄 Sinkron ' + syncQueue.length + '...', '#ffc107');
+            
+            while (syncQueue.length > 0) {
+                const item = syncQueue.shift();
+                try {
+                    await executeFirebaseAction(item);
+                    localStorage.setItem('gbp_syncQueue', JSON.stringify(syncQueue));
+                } catch (e) {
+                    console.error('Sync failed:', e);
+                    syncQueue.unshift(item);
+                    break;
+                }
+            }
+            
+            isSyncing = false;
+            updateStatus('🟢 Sinkron Selesai', '#28a745');
+        }
+
+        async function executeFirebaseAction(item) {
+            const {action, data} = item;
+            switch(action) {
+                case 'addMember':
+                    await db.ref('members').push(data);
+                    break;
+                case 'toggleMember':
+                    await db.ref(`members/${data.id}`).update({status: data.status});
+                    break;
+                case 'addAttendance':
+                    await db.ref('attendance').push(data);
+                    break;
+                case 'addFinance':
+                    await db.ref('finance').push(data);
+                    break;
+            }
         }
 
         function manualSync() {
+            if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa sync manual!');
             if (connectionStatus === 'online') {
                 processSyncQueue();
                 loadAllData();
@@ -537,14 +755,14 @@
                 document.querySelectorAll('.nav-links a').forEach(el => el.classList.remove('active'));
                 element.classList.add('active');
             }
-            loadAllData();
         }
 
         // --- AUTO INIT ---
-        if(localStorage.getItem('gbp_logged') === 'true') {
+        const savedUser = localStorage.getItem('gbp_currentUser');
+        if(savedUser) {
+            currentUser = JSON.parse(savedUser);
             initApp();
         }
     </script>
 </body>
 </html>
-
