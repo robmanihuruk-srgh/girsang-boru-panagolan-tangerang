@@ -239,6 +239,35 @@
             display: block;
         }
         
+        /* Style untuk hide/show berdasarkan role */
+        .admin-controls {
+            display: none;
+        }
+        
+        .admin-only-controls {
+            display: none;
+        }
+        
+        .user-view {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .user-view h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .user-view-message {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-style: italic;
+        }
+        
         @media(max-width:768px){
             .nav-links{justify-content:flex-start;padding-bottom:5px;}
             .btn{width:100% !important;}
@@ -488,28 +517,40 @@
         <section class="section" id="members">
             <div class="section-header admin-only"><h2>👥 Data Anggota</h2></div>
             <div class="section-content">
-                <!-- TOMBOL IMPORT DATA -->
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <!-- TOMBOL IMPORT DATA - HANYA UNTUK ADMIN -->
+                <div id="importButtons" class="admin-controls" style="display: flex; gap: 10px; margin-bottom: 20px;">
                     <button onclick="openImportModal()" class="btn btn-success" style="width: auto;">📁 Import Data</button>
                     <button onclick="downloadTemplate()" class="btn btn-warning" style="width: auto;">📥 Download Template</button>
                     <button onclick="exportMembers()" class="btn btn-primary" style="width: auto;">📤 Export Data</button>
                 </div>
                 
-                <!-- FORM TAMBAH ANGGOTA - FIELDS LENGKAP SESUAI SCREENSHOT -->
-                <div class="form-grid">
-                    <input type="text" id="no_kep" placeholder="No Kep. Keluarga">
-                    <input type="text" id="tgl_lahir" placeholder="Tgl Lahir (YYYY-MM-DD)">
-                    <input type="text" id="nama" placeholder="Nama Lengkap *">
-                    <input type="text" id="alamat" placeholder="Alamat *">
-                    <input type="text" id="no_hp" placeholder="No. HP">
-                    <input type="text" id="jabatan" placeholder="Jabatan">
-                    <input type="number" id="jumlah_anak" placeholder="Jumlah Anak" min="0" style="grid-column: span 2;">
-                    <textarea id="nama_anak" placeholder="Nama Anak (pisahkan dengan koma)" rows="2" style="grid-column: span 2;"></textarea>
-                    <input type="text" id="tgl_lahir_anak" placeholder="Tgl Lahir Anak (YYYY-MM-DD)">
-                    <input type="text" id="pendidikan_anak" placeholder="Pendidikan Anak">
-                    <input type="number" id="anggota_dewasa" placeholder="Anggota Dewasa" min="0">
-                    <button onclick="addMember()" class="btn btn-primary">➕ Tambah</button>
+                <!-- MESSAGE UNTUK USER BIASA -->
+                <div id="userViewMessage" class="user-view-message" style="display: none;">
+                    <h3>👋 Selamat Datang di Data Anggota</h3>
+                    <p>Anda login sebagai <strong>User Biasa</strong>. Fitur ini hanya dapat diakses oleh Administrator.</p>
+                    <p>Silakan hubungi Administrator jika Anda memerlukan akses untuk mengelola data anggota.</p>
                 </div>
+                
+                <!-- FORM TAMBAH ANGGOTA - FIELDS LENGKAP SESUAI SCREENSHOT (HANYA ADMIN) -->
+                <div id="memberFormContainer" class="admin-controls">
+                    <div class="form-grid">
+                        <input type="text" id="no_kep" placeholder="No Kep. Keluarga">
+                        <input type="text" id="tgl_lahir" placeholder="Tgl Lahir (YYYY-MM-DD)">
+                        <input type="text" id="nama" placeholder="Nama Lengkap *">
+                        <input type="text" id="alamat" placeholder="Alamat *">
+                        <input type="text" id="no_hp" placeholder="No. HP">
+                        <input type="text" id="jabatan" placeholder="Jabatan">
+                        <input type="number" id="jumlah_anak" placeholder="Jumlah Anak" min="0" style="grid-column: span 2;">
+                        <textarea id="nama_anak" placeholder="Nama Anak (pisahkan dengan koma)" rows="2" style="grid-column: span 2;"></textarea>
+                        <input type="text" id="tgl_lahir_anak" placeholder="Tgl Lahir Anak (YYYY-MM-DD)">
+                        <input type="text" id="pendidikan_anak" placeholder="Pendidikan Anak">
+                        <input type="number" id="anggota_dewasa" placeholder="Anggota Dewasa" min="0">
+                        <button onclick="addMember()" class="btn btn-primary">➕ Tambah</button>
+                    </div>
+                </div>
+                
+                <!-- TABEL DATA ANGGOTA (TAMPIL UNTUK SEMUA) -->
+                <h3 style="margin:20px 0 10px;font-size:16px;">Daftar Anggota</h3>
                 <div class="table-responsive">
                     <table id="membersTable">
                         <thead>
@@ -523,7 +564,7 @@
                                 <th>Jml Anak</th>
                                 <th>Nama Anak</th>
                                 <th>Status</th>
-                                <th>Aksi</th>
+                                <th id="actionColumnHeader">Aksi</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -535,16 +576,27 @@
         <section class="section" id="attendance">
             <div class="section-header admin-only"><h2>📋 Input Absensi</h2></div>
             <div class="section-content">
-                <div class="form-grid">
-                    <select id="member_id_att"><option value="">-- Pilih Anggota --</option></select>
-                    <input type="date" id="tanggal_att">
-                    <select id="status_hadir">
-                        <option value="hadir">Hadir</option>
-                        <option value="sakit">Sakit</option>
-                        <option value="izin">Izin</option>
-                    </select>
-                    <button onclick="addAttendance()" class="btn btn-primary">✅ Simpan</button>
+                <!-- FORM ABSENSI - HANYA UNTUK ADMIN -->
+                <div id="attendanceFormContainer" class="admin-controls">
+                    <div class="form-grid">
+                        <select id="member_id_att"><option value="">-- Pilih Anggota --</option></select>
+                        <input type="date" id="tanggal_att">
+                        <select id="status_hadir">
+                            <option value="hadir">Hadir</option>
+                            <option value="sakit">Sakit</option>
+                            <option value="izin">Izin</option>
+                        </select>
+                        <button onclick="addAttendance()" class="btn btn-primary">✅ Simpan</button>
+                    </div>
                 </div>
+                
+                <!-- MESSAGE UNTUK USER BIASA -->
+                <div id="attendanceUserMessage" class="user-view-message" style="display: none; margin-bottom: 20px;">
+                    <h3>📋 Data Absensi</h3>
+                    <p>Anda login sebagai <strong>User Biasa</strong>. Fitur input absensi hanya dapat diakses oleh Administrator.</p>
+                    <p>Berikut adalah riwayat absensi yang tersedia:</p>
+                </div>
+                
                 <h3 style="margin:20px 0 10px;font-size:16px;">Riwayat Absensi</h3>
                 <div class="table-responsive">
                     <table id="attendanceTable">
@@ -558,16 +610,27 @@
         <section class="section" id="finance">
             <div class="section-header admin-only"><h2>💰 Kas & Keuangan</h2></div>
             <div class="section-content">
-                <div class="form-grid">
-                    <input type="text" id="deskripsi_fin" placeholder="Keterangan Transaksi *">
-                    <input type="number" id="jumlah_fin" placeholder="Nominal (Rp) *">
-                    <select id="jenis_fin">
-                        <option value="pemasukan">➕ Pemasukan</option>
-                        <option value="pengeluaran">➖ Pengeluaran</option>
-                    </select>
-                    <input type="date" id="tanggal_fin">
-                    <button onclick="addFinance()" class="btn btn-primary">💸 Simpan Transaksi</button>
+                <!-- FORM KEUANGAN - HANYA UNTUK ADMIN -->
+                <div id="financeFormContainer" class="admin-controls">
+                    <div class="form-grid">
+                        <input type="text" id="deskripsi_fin" placeholder="Keterangan Transaksi *">
+                        <input type="number" id="jumlah_fin" placeholder="Nominal (Rp) *">
+                        <select id="jenis_fin">
+                            <option value="pemasukan">➕ Pemasukan</option>
+                            <option value="pengeluaran">➖ Pengeluaran</option>
+                        </select>
+                        <input type="date" id="tanggal_fin">
+                        <button onclick="addFinance()" class="btn btn-primary">💸 Simpan Transaksi</button>
+                    </div>
                 </div>
+                
+                <!-- MESSAGE UNTUK USER BIASA -->
+                <div id="financeUserMessage" class="user-view-message" style="display: none; margin-bottom: 20px;">
+                    <h3>💰 Data Keuangan</h3>
+                    <p>Anda login sebagai <strong>User Biasa</strong>. Fitur input keuangan hanya dapat diakses oleh Administrator.</p>
+                    <p>Berikut adalah riwayat transaksi yang tersedia:</p>
+                </div>
+                
                 <h3 style="margin:20px 0 10px;font-size:16px;">Riwayat Transaksi</h3>
                 <div class="table-responsive">
                     <table id="financeTable">
@@ -701,16 +764,47 @@
             const configStatus = document.getElementById('configStatus');
             
             if(currentUser.role === 'admin') {
+                // Show admin features
                 adminNav.style.display = 'inline-block';
                 adminElements.forEach(el => el.style.display = 'block');
                 if(configStatus) configStatus.style.display = 'block';
                 document.getElementById('statusIndicator').style.display = 'flex';
                 updateStatus('🟢 Siap!', '#28a745');
+                
+                // Show admin controls in members section
+                document.getElementById('importButtons').style.display = 'flex';
+                document.getElementById('memberFormContainer').style.display = 'block';
+                document.getElementById('userViewMessage').style.display = 'none';
+                document.getElementById('actionColumnHeader').style.display = 'table-cell';
+                
+                // Show admin controls in attendance section
+                document.getElementById('attendanceFormContainer').style.display = 'block';
+                document.getElementById('attendanceUserMessage').style.display = 'none';
+                
+                // Show admin controls in finance section
+                document.getElementById('financeFormContainer').style.display = 'block';
+                document.getElementById('financeUserMessage').style.display = 'none';
+                
             } else {
+                // Hide admin features
                 adminNav.style.display = 'none';
                 adminElements.forEach(el => el.style.display = 'none');
                 if(configStatus) configStatus.style.display = 'none';
                 document.getElementById('statusIndicator').style.display = 'none';
+                
+                // Hide admin controls in members section
+                document.getElementById('importButtons').style.display = 'none';
+                document.getElementById('memberFormContainer').style.display = 'none';
+                document.getElementById('userViewMessage').style.display = 'block';
+                document.getElementById('actionColumnHeader').style.display = 'none';
+                
+                // Hide admin controls in attendance section
+                document.getElementById('attendanceFormContainer').style.display = 'none';
+                document.getElementById('attendanceUserMessage').style.display = 'block';
+                
+                // Hide admin controls in finance section
+                document.getElementById('financeFormContainer').style.display = 'none';
+                document.getElementById('financeUserMessage').style.display = 'block';
             }
         }
 
@@ -1270,6 +1364,14 @@
             const tbody = document.querySelector('#membersTable tbody');
             tbody.innerHTML = '';
             members.forEach(m => {
+                // Show/hide action buttons based on user role
+                const actionButtons = currentUser.role === 'admin' ? 
+                    `<td>
+                        <button onclick="editMember(${m.id})" class="btn btn-warning btn-sm">Edit</button>
+                        <button onclick="toggleMember(${m.id})" class="btn btn-danger btn-sm">${m.status === 'aktif' ? 'Nonaktif' : 'Aktif'}</button>
+                    </td>` : 
+                    `<td>-</td>`;
+                
                 const row = `<tr>
                     <td>${m.no_kep || '-'}</td>
                     <td><strong>${m.nama}</strong></td>
@@ -1280,10 +1382,7 @@
                     <td>${m.jumlah_anak || '0'}</td>
                     <td>${m.nama_anak || '-'}</td>
                     <td><span class="status-badge ${m.status === 'aktif' ? 'status-aktif' : 'status-nonaktif'}">${m.status}</span></td>
-                    <td>
-                        <button onclick="editMember(${m.id})" class="btn btn-warning btn-sm">Edit</button>
-                        <button onclick="toggleMember(${m.id})" class="btn btn-danger btn-sm">${m.status === 'aktif' ? 'Nonaktif' : 'Aktif'}</button>
-                    </td>
+                    ${actionButtons}
                 </tr>`;
                 tbody.innerHTML += row;
             });
