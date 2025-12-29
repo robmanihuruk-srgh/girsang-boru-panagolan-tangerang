@@ -94,6 +94,28 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
+    <!-- EDIT MEMBER MODAL -->
+    <div id="editMemberModal" class="edit-modal">
+        <div class="modal-content">
+            <h3>✏️ Edit Anggota</h3>
+            <input type="hidden" id="editMemberId">
+            <div class="form-grid">
+                <input type="text" id="editNama" placeholder="Nama Lengkap *">
+                <input type="text" id="editAlamat" placeholder="Alamat *">
+                <input type="text" id="editNoHp" placeholder="No. HP">
+                <input type="text" id="editJabatan" placeholder="Jabatan">
+                <select id="editStatus">
+                    <option value="aktif">Aktif</option>
+                    <option value="nonaktif">Nonaktif</option>
+                </select>
+                <div style="display:flex;gap:10px;">
+                    <button onclick="saveMemberEdit()" class="btn btn-primary" style="flex:1;">💾 Simpan</button>
+                    <button onclick="closeEditModal()" class="btn btn-danger" style="flex:1;">❌ Batal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- EDIT USER MODAL -->
     <div id="editUserModal" class="edit-modal">
         <div class="modal-content">
@@ -209,7 +231,10 @@
         <section class="section" id="members">
             <div class="section-header admin-only"><h2>👥 Data Anggota</h2></div>
             <div class="section-content">
+                <!-- FORM TAMBAH ANGGOTA - FIELDS LENGKAP SESUAI SCREENSHOT -->
                 <div class="form-grid">
+                    <input type="text" id="no_kep" placeholder="No Kep. Keluarga">
+                    <input type="text" id="tgl_lahir" placeholder="Tgl Lahir (YYYY-MM-DD)">
                     <input type="text" id="nama" placeholder="Nama Lengkap *">
                     <input type="text" id="alamat" placeholder="Alamat *">
                     <input type="text" id="no_hp" placeholder="No. HP">
@@ -218,7 +243,18 @@
                 </div>
                 <div class="table-responsive">
                     <table id="membersTable">
-                        <thead><tr><th>Nama</th><th>Alamat/HP</th><th>Jabatan</th><th>Status</th><th>Aksi</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th>No Kep</th>
+                                <th>Tgl Lahir</th>
+                                <th>Nama</th>
+                                <th>Alamat</th>
+                                <th>HP</th>
+                                <th>Jabatan</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -467,15 +503,51 @@
             alert('✅ User dihapus!');
         }
 
-        function closeEditModal() {
-            document.getElementById('editUserModal').style.display = 'none';
+        // --- MEMBER MANAGEMENT - EDIT MODAL FUNCTIONS ---
+        function editMember(memberId) {
+            if(currentUser.role !== 'admin') return;
+            const member = members.find(m => m.id === memberId);
+            if(!member) return;
+
+            document.getElementById('editMemberId').value = member.id;
+            document.getElementById('editNama').value = member.nama || '';
+            document.getElementById('editAlamat').value = member.alamat || '';
+            document.getElementById('editNoHp').value = member.no_hp || '';
+            document.getElementById('editJabatan').value = member.jabatan || '';
+            document.getElementById('editStatus').value = member.status || 'aktif';
+            document.getElementById('editMemberModal').style.display = 'flex';
         }
 
-        function saveUsersToStorage() {
-            localStorage.setItem('gbp_users', JSON.stringify(users));
-            if(connectionStatus === 'online' && currentUser.role === 'admin') {
-                db.ref('users').set(users);
-            }
+        function saveMemberEdit() {
+            if(currentUser.role !== 'admin') return;
+            const memberId = parseInt(document.getElementById('editMemberId').value);
+            const nama = document.getElementById('editNama').value.trim();
+            const alamat = document.getElementById('editAlamat').value.trim();
+            
+            if(!nama || !alamat) return alert('❌ Nama dan Alamat wajib diisi!');
+
+            const memberIdx = members.findIndex(m => m.id === memberId);
+            if(memberIdx === -1) return;
+
+            members[memberIdx] = {
+                ...members[memberIdx],
+                nama, alamat,
+                no_hp: document.getElementById('editNoHp').value.trim(),
+                jabatan: document.getElementById('editJabatan').value.trim(),
+                status: document.getElementById('editStatus').value,
+                updatedAt: Date.now()
+            };
+
+            queueAction('updateMember', members[memberIdx]);
+            localStorage.setItem('gbp_members', JSON.stringify(members));
+            renderAll();
+            closeEditModal();
+            alert('✅ Anggota berhasil diupdate!');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editMemberModal').style.display = 'none';
+            document.getElementById('editUserModal').style.display = 'none';
         }
 
         function loadUsersTable() {
@@ -496,6 +568,13 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        function saveUsersToStorage() {
+            localStorage.setItem('gbp_users', JSON.stringify(users));
+            if(connectionStatus === 'online' && currentUser.role === 'admin') {
+                db.ref('users').set(users);
+            }
         }
 
         // --- DATA SYSTEM (ALL FEATURES MAINTAINED) ---
@@ -550,16 +629,23 @@
             document.getElementById('saldoKas').innerText = 'Rp ' + total.toLocaleString('id-ID');
         }
 
+        // *** MODIFIED: TABLE HEADER & DATA SESUAI SCREENSHOT ***
         function loadMembersTable() {
             const tbody = document.querySelector('#membersTable tbody');
             tbody.innerHTML = '';
             members.forEach(m => {
                 const row = `<tr>
+                    <td>${m.no_kep || '-'}</td>
+                    <td>${m.tgl_lahir || '-'}</td>
                     <td><strong>${m.nama}</strong></td>
-                    <td>${m.alamat}<br><small style="color:#666">${m.hp || ''}</small></td>
+                    <td>${m.alamat}</td>
+                    <td>${m.no_hp || '-'}</td>
                     <td>${m.jabatan || 'Anggota'}</td>
                     <td><span class="status-badge ${m.status === 'aktif' ? 'status-aktif' : 'status-nonaktif'}">${m.status}</span></td>
-                    <td><button onclick="toggleMember(${m.id})" class="btn btn-danger" style="padding:5px 10px;font-size:10px;width:auto;">${m.status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan'}</button></td>
+                    <td>
+                        <button onclick="editMember(${m.id})" class="btn btn-warning btn-sm">Edit</button>
+                        <button onclick="toggleMember(${m.id})" class="btn btn-danger btn-sm">${m.status === 'aktif' ? 'Nonaktif' : 'Aktif'}</button>
+                    </td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
@@ -607,15 +693,7 @@
             sel.value = currentVal;
         }
 
-        // --- ACTIONS (WITH ADMIN CHECK) ---
-        function queueAction(action, data) {
-            if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa sync data!');
-            const queueItem = {action, data, timestamp: Date.now(), id: Date.now()};
-            syncQueue.unshift(queueItem);
-            localStorage.setItem('gbp_syncQueue', JSON.stringify(syncQueue));
-            if (connectionStatus === 'online' && !isSyncing) processSyncQueue();
-        }
-
+        // *** MODIFIED: addMember() DENGAN FIELDS BARU ***
         function addMember() {
             if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa tambah anggota!');
             const nama = document.getElementById('nama').value.trim();
@@ -624,8 +702,10 @@
 
             const newMember = {
                 id: Date.now(),
+                no_kep: document.getElementById('no_kep').value.trim(),
+                tgl_lahir: document.getElementById('tgl_lahir').value.trim(),
                 nama, alamat,
-                hp: document.getElementById('no_hp').value.trim(),
+                no_hp: document.getElementById('no_hp').value.trim(),
                 jabatan: document.getElementById('jabatan').value.trim() || 'Anggota',
                 status: 'aktif',
                 createdAt: Date.now()
@@ -635,6 +715,9 @@
             queueAction('addMember', newMember);
             localStorage.setItem('gbp_members', JSON.stringify(members));
             
+            // Clear form
+            document.getElementById('no_kep').value = '';
+            document.getElementById('tgl_lahir').value = '';
             document.getElementById('nama').value = '';
             document.getElementById('alamat').value = '';
             document.getElementById('no_hp').value = '';
@@ -702,6 +785,7 @@
             alert('✅ Transaksi tersimpan!');
         }
 
+        // *** MODIFIED: Support updateMember di sync ***
         async function processSyncQueue() {
             if (currentUser.role !== 'admin' || isSyncing || syncQueue.length === 0 || connectionStatus !== 'online') return;
             
@@ -733,6 +817,17 @@
                 case 'toggleMember':
                     await db.ref(`members/${data.id}`).update({status: data.status});
                     break;
+                case 'updateMember':  // *** NEW: Support edit member ***
+                    await db.ref(`members/${data.id}`).update({
+                        no_kep: data.no_kep,
+                        tgl_lahir: data.tgl_lahir,
+                        nama: data.nama,
+                        alamat: data.alamat,
+                        no_hp: data.no_hp,
+                        jabatan: data.jabatan,
+                        status: data.status
+                    });
+                    break;
                 case 'addAttendance':
                     await db.ref('attendance').push(data);
                     break;
@@ -753,6 +848,14 @@
             }
         }
 
+        function queueAction(action, data) {
+            if(currentUser.role !== 'admin') return alert('❌ Hanya admin yang bisa sync data!');
+            const queueItem = {action, data, timestamp: Date.now(), id: Date.now()};
+            syncQueue.unshift(queueItem);
+            localStorage.setItem('gbp_syncQueue', JSON.stringify(syncQueue));
+            if (connectionStatus === 'online' && !isSyncing) processSyncQueue();
+        }
+
         function showSection(id, element) {
             document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -771,4 +874,3 @@
     </script>
 </body>
 </html>
-
