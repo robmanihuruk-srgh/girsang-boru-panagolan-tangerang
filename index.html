@@ -484,7 +484,7 @@
             background: white;
             border-radius: 15px;
             width: 100%;
-            max-width: 800px;
+            max-width: 900px;
             max-height: 90vh;
             overflow-y: auto;
             animation: modalSlideIn 0.3s ease-out;
@@ -949,6 +949,112 @@
                 transform: translateX(0);
             }
         }
+
+        /* STYLES UNTUK DATA ANAK */
+        .children-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .children-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .children-header h4 {
+            color: #2c3e50;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .children-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .child-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .child-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .child-item-title {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .child-item-remove {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .child-item-remove:hover {
+            background: #c0392b;
+        }
+
+        .btn-add-child {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+
+        .btn-add-child:hover {
+            background: #2980b9;
+        }
+
+        .children-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        .child-stat-item {
+            background: white;
+            padding: 8px;
+            border-radius: 5px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+
+        .child-stat-value {
+            font-weight: 600;
+            color: #3498db;
+        }
+
+        .child-stat-label {
+            color: #6c757d;
+            font-size: 11px;
+        }
     </style>
     
     <!-- SheetJS untuk Excel support -->
@@ -1220,6 +1326,7 @@
                                 <th>No HP</th>
                                 <th>Jabatan</th>
                                 <th>Status</th>
+                                <th>Jumlah Anak</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -1389,7 +1496,7 @@
         </div>
     </div>
 
-    <!-- MODAL FORM -->
+    <!-- MODAL FORM DENGAN DATA ANAK -->
     <div id="memberModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-header">
@@ -1440,6 +1547,23 @@
                         </select>
                     </div>
                 </div>
+                
+                <!-- SECTION DATA ANAK -->
+                <div class="children-section">
+                    <div class="children-header">
+                        <h4>👶 Data Anak-Anak</h4>
+                        <button type="button" class="btn-add-child" onclick="addChildField()">
+                            <span>➕</span> Tambah Anak
+                        </button>
+                    </div>
+                    <div class="children-list" id="childrenList">
+                        <!-- Data anak akan ditambahkan di sini -->
+                        <div class="no-children" style="text-align: center; color: #666; padding: 20px;">
+                            Belum ada data anak. Klik "Tambah Anak" untuk menambahkan.
+                        </div>
+                    </div>
+                </div>
+                
                 <input type="hidden" id="memberId">
             </div>
             <div class="modal-footer">
@@ -1493,6 +1617,7 @@
         let currentUser = {username: '', role: 'user'};
         let members = [], attendance = [], finance = [], users = [];
         let appInitialized = false;
+        let childCounter = 0;
 
         // Default users
         const defaultUsers = {
@@ -1694,11 +1819,12 @@
             console.log('🎯 Firebase listeners aktif');
         }
 
-        // ==================== MEMBER FUNCTIONS ====================
+        // ==================== MEMBER FUNCTIONS (DENGAN DATA ANAK) ====================
         function showAddMemberForm() {
             document.getElementById('memberModalTitle').textContent = 'Tambah Anggota Baru';
             document.getElementById('memberId').value = '';
             clearMemberForm();
+            clearChildrenList();
             document.getElementById('memberModal').style.display = 'flex';
         }
 
@@ -1712,6 +1838,7 @@
             document.getElementById('memberModalTitle').textContent = 'Edit Anggota';
             document.getElementById('memberId').value = firebaseKey;
             fillMemberForm(member);
+            fillChildrenList(member);
             document.getElementById('memberModal').style.display = 'flex';
         }
 
@@ -1725,6 +1852,12 @@
             document.getElementById('memberStatus').value = 'aktif';
         }
 
+        function clearChildrenList() {
+            const childrenList = document.getElementById('childrenList');
+            childrenList.innerHTML = '<div class="no-children" style="text-align: center; color: #666; padding: 20px;">Belum ada data anak. Klik "Tambah Anak" untuk menambahkan.</div>';
+            childCounter = 0;
+        }
+
         function fillMemberForm(member) {
             document.getElementById('memberNoKep').value = member.no_kep || '';
             document.getElementById('memberName').value = member.nama || '';
@@ -1733,6 +1866,89 @@
             document.getElementById('memberAddress').value = member.alamat || '';
             document.getElementById('memberPosition').value = member.jabatan || 'Anggota';
             document.getElementById('memberStatus').value = member.status || 'aktif';
+        }
+
+        function fillChildrenList(member) {
+            clearChildrenList();
+            const childrenList = document.getElementById('childrenList');
+            childrenList.innerHTML = '';
+            
+            if (member.children && member.children.length > 0) {
+                member.children.forEach((child, index) => {
+                    addChildField(child);
+                });
+            } else {
+                childrenList.innerHTML = '<div class="no-children" style="text-align: center; color: #666; padding: 20px;">Belum ada data anak. Klik "Tambah Anak" untuk menambahkan.</div>';
+            }
+        }
+
+        function addChildField(childData = {}) {
+            const childrenList = document.getElementById('childrenList');
+            
+            // Hapus "no children" message jika ada
+            const noChildren = childrenList.querySelector('.no-children');
+            if (noChildren) {
+                noChildren.remove();
+            }
+            
+            childCounter++;
+            const childId = `child_${childCounter}`;
+            
+            const childItem = document.createElement('div');
+            childItem.className = 'child-item';
+            childItem.id = childId;
+            
+            childItem.innerHTML = `
+                <div class="child-item-header">
+                    <div class="child-item-title">Anak #${childCounter}</div>
+                    <button type="button" class="child-item-remove" onclick="removeChildField('${childId}')">✕</button>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="${childId}_name">Nama Anak</label>
+                        <input type="text" id="${childId}_name" class="form-control" placeholder="Nama lengkap anak" value="${childData.nama || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="${childId}_birthDate">Tanggal Lahir</label>
+                        <input type="date" id="${childId}_birthDate" class="form-control" value="${childData.tanggal_lahir || ''}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="${childId}_gender">Jenis Kelamin</label>
+                        <select id="${childId}_gender" class="form-control">
+                            <option value="">Pilih Jenis Kelamin</option>
+                            <option value="Laki-Laki" ${childData.jenis_kelamin === 'Laki-Laki' ? 'selected' : ''}>Laki-Laki</option>
+                            <option value="Perempuan" ${childData.jenis_kelamin === 'Perempuan' ? 'selected' : ''}>Perempuan</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="${childId}_education">Pendidikan</label>
+                        <select id="${childId}_education" class="form-control">
+                            <option value="">Pilih Pendidikan</option>
+                            <option value="SD" ${childData.pendidikan === 'SD' ? 'selected' : ''}>SD</option>
+                            <option value="SMP" ${childData.pendidikan === 'SMP' ? 'selected' : ''}>SMP</option>
+                            <option value="SMU" ${childData.pendidikan === 'SMU' ? 'selected' : ''}>SMU</option>
+                            <option value="KULIAH" ${childData.pendidikan === 'KULIAH' ? 'selected' : ''}>KULIAH</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            
+            childrenList.appendChild(childItem);
+        }
+
+        function removeChildField(childId) {
+            const childElement = document.getElementById(childId);
+            if (childElement) {
+                childElement.remove();
+                
+                // Jika tidak ada anak lagi, tampilkan pesan
+                const childrenList = document.getElementById('childrenList');
+                if (childrenList.children.length === 0) {
+                    childrenList.innerHTML = '<div class="no-children" style="text-align: center; color: #666; padding: 20px;">Belum ada data anak. Klik "Tambah Anak" untuk menambahkan.</div>';
+                }
+            }
         }
 
         function closeMemberModal() {
@@ -1749,6 +1965,27 @@
                 return;
             }
             
+            // Kumpulkan data anak-anak
+            const children = [];
+            const childItems = document.querySelectorAll('.child-item');
+            
+            childItems.forEach((childItem, index) => {
+                const childId = childItem.id;
+                const childName = document.getElementById(`${childId}_name`).value.trim();
+                const childBirthDate = document.getElementById(`${childId}_birthDate`).value;
+                const childGender = document.getElementById(`${childId}_gender`).value;
+                const childEducation = document.getElementById(`${childId}_education`).value;
+                
+                if (childName) {
+                    children.push({
+                        nama: childName,
+                        tanggal_lahir: childBirthDate,
+                        jenis_kelamin: childGender,
+                        pendidikan: childEducation
+                    });
+                }
+            });
+            
             const memberData = {
                 no_kep: document.getElementById('memberNoKep').value.trim(),
                 nama: nama,
@@ -1757,6 +1994,8 @@
                 alamat: alamat,
                 jabatan: document.getElementById('memberPosition').value,
                 status: document.getElementById('memberStatus').value,
+                children: children,
+                jumlah_anak: children.length,
                 updatedAt: Date.now(),
                 updatedBy: currentUser.username
             };
@@ -1815,7 +2054,7 @@
             if (members.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                        <td colspan="9" style="text-align: center; padding: 40px; color: #666;">
                             📝 Belum ada data anggota. Mulai dengan menambahkan anggota baru.
                         </td>
                     </tr>
@@ -1832,12 +2071,22 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${index + 1}</td>
-                    <td><strong>${member.nama || '-'}</strong>${member.no_kep ? `<br><small style="color:#666;">No. KK: ${member.no_kep}</small>` : ''}</td>
+                    <td>
+                        <strong>${member.nama || '-'}</strong>
+                        ${member.no_kep ? `<br><small style="color:#666;">No. KK: ${member.no_kep}</small>` : ''}
+                        ${member.children && member.children.length > 0 ? 
+                            `<br><small style="color:#3498db;">👶 ${member.children.length} anak</small>` : ''}
+                    </td>
                     <td>${member.tgl_lahir ? formatDate(member.tgl_lahir) : '-'}</td>
                     <td>${member.alamat ? (member.alamat.length > 30 ? member.alamat.substring(0, 30) + '...' : member.alamat) : '-'}</td>
                     <td>${member.no_hp || '-'}</td>
                     <td>${member.jabatan || 'Anggota'}</td>
                     <td><span class="status-badge status-${member.status || 'aktif'}">${member.status === 'aktif' ? 'Aktif' : 'Nonaktif'}</span></td>
+                    <td style="text-align: center;">
+                        ${member.jumlah_anak || 0}
+                        ${member.children && member.children.length > 0 ? 
+                            `<br><small style="color:#666; font-size: 11px;">(${member.children.length} data anak)</small>` : ''}
+                    </td>
                     <td>
                         <div class="action-buttons">
                             <button onclick="showEditMemberForm('${member.firebaseKey}')" class="action-btn edit" title="Edit">✏️</button>
@@ -1953,6 +2202,11 @@
             const active = members.filter(m => m.status === 'aktif').length;
             const inactive = members.filter(m => m.status === 'nonaktif').length;
             
+            // Hitung total anak
+            const totalChildren = members.reduce((sum, member) => {
+                return sum + (member.jumlah_anak || 0);
+            }, 0);
+            
             document.getElementById('totalMembers').textContent = total;
             document.getElementById('activeMembers').textContent = active;
             document.getElementById('inactiveMembers').textContent = inactive;
@@ -1965,15 +2219,16 @@
             // Contoh aktivitas
             const activities = [
                 { date: new Date().toLocaleDateString('id-ID'), activity: 'Login Sistem', detail: `User: ${currentUser.username}`, status: 'Success' },
-                { date: new Date().toLocaleDateString('id-ID'), activity: 'Load Data', detail: `Memuat ${total} anggota`, status: 'Completed' }
+                { date: new Date().toLocaleDateString('id-ID'), activity: 'Load Data', detail: `Memuat ${total} anggota (${totalChildren} anak)`, status: 'Completed' }
             ];
             
             if (members.length > 0) {
                 const latestMember = members[members.length - 1];
+                const childInfo = latestMember.jumlah_anak > 0 ? ` (${latestMember.jumlah_anak} anak)` : '';
                 activities.push({
                     date: formatDate(latestMember.createdAt || new Date().toISOString()),
                     activity: 'Anggota Baru',
-                    detail: latestMember.nama,
+                    detail: latestMember.nama + childInfo,
                     status: 'Added'
                 });
             }
@@ -1997,6 +2252,10 @@
         }
 
         function updateReports() {
+            const totalChildren = members.reduce((sum, member) => {
+                return sum + (member.jumlah_anak || 0);
+            }, 0);
+            
             document.getElementById('reportTotalMembers').textContent = members.length;
             document.getElementById('reportAttendanceRate').textContent = '0%';
             document.getElementById('reportTotalIncome').textContent = 'Rp 0';
@@ -2008,7 +2267,7 @@
             loadAllData();
         }
 
-        // ==================== EXPORT FUNCTIONS ====================
+        // ==================== EXPORT FUNCTIONS (DIPERBARUI UNTUK DATA ANAK) ====================
         function exportToExcel() {
             if (members.length === 0) {
                 showToast('error', 'Data Kosong', 'Tidak ada data anggota untuk diexport.');
@@ -2016,17 +2275,32 @@
             }
             
             try {
-                const exportData = members.map(member => ({
-                    'No Kep. Keluarga': member.no_kep || '',
-                    'Nama Lengkap': member.nama || '',
-                    'Tanggal Lahir': member.tgl_lahir || '',
-                    'Alamat': member.alamat || '',
-                    'No HP': member.no_hp || '',
-                    'Jabatan': member.jabatan || '',
-                    'Status': member.status === 'aktif' ? 'Aktif' : 'Nonaktif',
-                    'Tanggal Dibuat': member.createdAt ? formatDate(member.createdAt) : '',
-                    'Dibuat Oleh': member.createdBy || ''
-                }));
+                const exportData = members.map(member => {
+                    const baseData = {
+                        'No Kep. Keluarga': member.no_kep || '',
+                        'Nama Lengkap': member.nama || '',
+                        'Tanggal Lahir': member.tgl_lahir || '',
+                        'Alamat': member.alamat || '',
+                        'No HP': member.no_hp || '',
+                        'Jabatan': member.jabatan || '',
+                        'Status': member.status === 'aktif' ? 'Aktif' : 'Nonaktif',
+                        'Jumlah Anak': member.jumlah_anak || 0,
+                        'Tanggal Dibuat': member.createdAt ? formatDate(member.createdAt) : '',
+                        'Dibuat Oleh': member.createdBy || ''
+                    };
+                    
+                    // Tambahkan data anak jika ada
+                    if (member.children && member.children.length > 0) {
+                        member.children.forEach((child, index) => {
+                            baseData[`Anak ${index + 1} - Nama`] = child.nama || '';
+                            baseData[`Anak ${index + 1} - Tanggal Lahir`] = child.tanggal_lahir || '';
+                            baseData[`Anak ${index + 1} - Jenis Kelamin`] = child.jenis_kelamin || '';
+                            baseData[`Anak ${index + 1} - Pendidikan`] = child.pendidikan || '';
+                        });
+                    }
+                    
+                    return baseData;
+                });
                 
                 const ws = XLSX.utils.json_to_sheet(exportData);
                 const wb = XLSX.utils.book_new();
@@ -2078,7 +2352,7 @@
                 return;
             }
             
-            let report = `📊 LAPORAN DATA ANGGOTA\n`;
+            let report = `📊 LAPORAN DATA ANGGOTA & ANAK\n`;
             report += `Periode: ${new Date().toLocaleDateString('id-ID')}\n`;
             report += `Dibuat oleh: ${currentUser.username}\n\n`;
             report += `👥 TOTAL ANGGOTA: ${members.length}\n\n`;
@@ -2088,6 +2362,14 @@
             
             report += `✅ Aktif: ${activeCount} (${Math.round((activeCount/members.length)*100)}%)\n`;
             report += `❌ Nonaktif: ${inactiveCount} (${Math.round((inactiveCount/members.length)*100)}%)\n\n`;
+            
+            // Hitung total anak
+            const totalChildren = members.reduce((sum, member) => {
+                return sum + (member.jumlah_anak || 0);
+            }, 0);
+            
+            report += `👶 TOTAL ANAK: ${totalChildren}\n`;
+            report += `👨‍👩‍👧‍👦 Rata-rata anak per anggota: ${(totalChildren / members.length).toFixed(1)}\n\n`;
             
             // Group by jabatan
             const jabatanCount = {};
@@ -2101,13 +2383,45 @@
                 report += `  ${jabatan}: ${count} orang\n`;
             }
             
+            // Statistik pendidikan anak
+            const pendidikanStats = { SD: 0, SMP: 0, SMU: 0, KULIAH: 0 };
+            const genderStats = { 'Laki-Laki': 0, 'Perempuan': 0 };
+            
+            members.forEach(member => {
+                if (member.children) {
+                    member.children.forEach(child => {
+                        if (child.pendidikan && pendidikanStats[child.pendidikan] !== undefined) {
+                            pendidikanStats[child.pendidikan]++;
+                        }
+                        if (child.jenis_kelamin && genderStats[child.jenis_kelamin] !== undefined) {
+                            genderStats[child.jenis_kelamin]++;
+                        }
+                    });
+                }
+            });
+            
+            report += `\n📚 DISTRIBUSI PENDIDIKAN ANAK:\n`;
+            for (const [pendidikan, count] of Object.entries(pendidikanStats)) {
+                if (count > 0) {
+                    report += `  ${pendidikan}: ${count} anak\n`;
+                }
+            }
+            
+            report += `\n🚻 JENIS KELAMIN ANAK:\n`;
+            for (const [gender, count] of Object.entries(genderStats)) {
+                if (count > 0) {
+                    report += `  ${gender}: ${count} anak\n`;
+                }
+            }
+            
             report += `\n📅 DATA TERBARU:\n`;
             const sortedByDate = [...members].sort((a, b) => {
                 return (b.createdAt || 0) - (a.createdAt || 0);
             }).slice(0, 5);
             
             sortedByDate.forEach((member, index) => {
-                report += `${index + 1}. ${member.nama} - ${member.jabatan || 'Anggota'} (${member.status})\n`;
+                const childInfo = member.jumlah_anak > 0 ? ` (${member.jumlah_anak} anak)` : '';
+                report += `${index + 1}. ${member.nama} - ${member.jabatan || 'Anggota'} (${member.status})${childInfo}\n`;
             });
             
             // Tampilkan di alert atau console
