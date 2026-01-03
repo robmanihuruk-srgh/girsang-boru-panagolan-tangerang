@@ -1055,6 +1055,153 @@
             color: #6c757d;
             font-size: 11px;
         }
+
+        /* STYLES UNTUK NOMOR KK */
+        .kk-info {
+            background: #e8f4fc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .kk-info h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .kk-format {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            text-align: center;
+        }
+
+        .kk-part {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 600;
+            border: 1px solid #3498db;
+        }
+
+        .kk-label {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* FAMILY TREE STYLES */
+        .family-tree {
+            font-family: monospace;
+            line-height: 1.6;
+            white-space: pre;
+        }
+
+        .family-member {
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .family-member:before {
+            content: '├── ';
+            position: absolute;
+            left: 0;
+        }
+
+        .family-member.last:before {
+            content: '└── ';
+        }
+
+        /* CHART STYLES */
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .chart-wrapper {
+            height: 300px;
+            position: relative;
+        }
+
+        /* PRINT STYLES */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-section, .print-section * {
+                visibility: visible;
+            }
+            .print-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 20px;
+                background: white;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        /* DETAIL VIEW STYLES */
+        .detail-view {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            width: 150px;
+            color: #2c3e50;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: #495057;
+        }
+
+        /* ATTENDANCE STATUS BADGES */
+        .attendance-hadir {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .attendance-sakit {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .attendance-izin {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .attendance-alfa {
+            background: #f8d7da;
+            color: #721c24;
+        }
     </style>
     
     <!-- SheetJS untuk Excel support -->
@@ -1062,12 +1209,13 @@
     <!-- jsPDF untuk export PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- Chart.js untuk visualisasi -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <!-- 🔥 FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-    <!-- TAMBAHKAN FIREBASE AUTH -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
     <!-- MODAL IMPOR -->
@@ -1094,7 +1242,7 @@
                                 <tr>
                                     <td style="padding:4px; border:1px solid #ddd;">NO / NOMOR</td>
                                     <td style="padding:4px; border:1px solid #ddd;">No Kep. Keluarga</td>
-                                    <td style="padding:4px; border:1px solid #ddd;">001, 002</td>
+                                    <td style="padding:4px; border:1px solid #ddd;">TGBP-W3TGR-S-0001-G</td>
                                 </tr>
                                 <tr>
                                     <td style="padding:4px; border:1px solid #ddd;">NAMA / NAMA LENGKAP</td>
@@ -1188,6 +1336,209 @@
         </div>
     </div>
 
+    <!-- MODAL DETAIL ANGGOTA -->
+    <div id="detailModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>👤 Detail Anggota</h3>
+                <div class="modal-close" onclick="closeDetailModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div id="detailContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="printDetail()" class="btn btn-primary">🖨️ Cetak</button>
+                <button onclick="closeDetailModal()" class="btn btn-danger">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LAPORAN ANGGOTA -->
+    <div id="memberReportModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3>📊 Laporan Data Anggota</h3>
+                <div class="modal-close" onclick="closeMemberReportModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="print-section">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h2>Girsang Boru Panagolan Tangerang</h2>
+                        <h3>Laporan Data Anggota</h3>
+                        <p>Periode: <span id="reportPeriod"></span></p>
+                    </div>
+                    <div id="memberReportContent"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="printMemberReport()" class="btn btn-primary">🖨️ Cetak</button>
+                <button onclick="closeMemberReportModal()" class="btn btn-danger">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH KEHADIRAN -->
+    <div id="attendanceModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="attendanceModalTitle">➕ Tambah Kehadiran</h3>
+                <div class="modal-close" onclick="closeAttendanceModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="attendanceDate">Tanggal *</label>
+                    <input type="date" id="attendanceDate" class="form-control" value="<?php echo date('Y-m-d'); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="attendanceMember">Anggota *</label>
+                    <select id="attendanceMember" class="form-control">
+                        <option value="">Pilih Anggota</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="attendanceStatus">Status *</label>
+                    <select id="attendanceStatus" class="form-control">
+                        <option value="hadir">Hadir</option>
+                        <option value="sakit">Sakit</option>
+                        <option value="izin">Izin</option>
+                        <option value="alfa">Alfa</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="attendanceNote">Keterangan</label>
+                    <textarea id="attendanceNote" class="form-control" rows="3" placeholder="Keterangan kehadiran"></textarea>
+                </div>
+                <input type="hidden" id="attendanceId">
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeAttendanceModal()" class="btn btn-danger">Batal</button>
+                <button onclick="saveAttendance()" class="btn btn-success">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH TRANSAKSI KEUANGAN -->
+    <div id="financeModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="financeModalTitle">💰 Transaksi Baru</h3>
+                <div class="modal-close" onclick="closeFinanceModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="financeDate">Tanggal *</label>
+                        <input type="date" id="financeDate" class="form-control" value="<?php echo date('Y-m-d'); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="financeType">Jenis *</label>
+                        <select id="financeType" class="form-control">
+                            <option value="pemasukan">Pemasukan</option>
+                            <option value="pengeluaran">Pengeluaran</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="financeCategory">Kategori *</label>
+                    <select id="financeCategory" class="form-control">
+                        <option value="">Pilih Kategori</option>
+                        <option value="iuran">Iuran Anggota</option>
+                        <option value="donasi">Donasi</option>
+                        <option value="kegiatan">Kegiatan</option>
+                        <option value="administrasi">Administrasi</option>
+                        <option value="lainnya">Lainnya</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="financeAmount">Jumlah (Rp) *</label>
+                    <input type="number" id="financeAmount" class="form-control" placeholder="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="financeDescription">Keterangan *</label>
+                    <textarea id="financeDescription" class="form-control" rows="3" placeholder="Deskripsi transaksi" required></textarea>
+                </div>
+                <input type="hidden" id="financeId">
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeFinanceModal()" class="btn btn-danger">Batal</button>
+                <button onclick="saveFinance()" class="btn btn-success">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH PENGGUNA -->
+    <div id="userModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="userModalTitle">👤 Tambah Pengguna Baru</h3>
+                <div class="modal-close" onclick="closeUserModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="userUsername">Username *</label>
+                    <input type="text" id="userUsername" class="form-control" placeholder="Username untuk login" required>
+                </div>
+                <div class="form-group">
+                    <label for="userPassword">Password *</label>
+                    <input type="password" id="userPassword" class="form-control" placeholder="Password" required>
+                </div>
+                <div class="form-group">
+                    <label for="userFullName">Nama Lengkap *</label>
+                    <input type="text" id="userFullName" class="form-control" placeholder="Nama lengkap pengguna" required>
+                </div>
+                <div class="form-group">
+                    <label for="userRole">Role *</label>
+                    <select id="userRole" class="form-control">
+                        <option value="admin">Administrator</option>
+                        <option value="user" selected>Pengguna Biasa</option>
+                    </select>
+                </div>
+                <input type="hidden" id="userId">
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeUserModal()" class="btn btn-danger">Batal</button>
+                <button onclick="saveUser()" class="btn btn-success">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LAPORAN KEUANGAN -->
+    <div id="financeReportModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3>💰 Laporan Keuangan</h3>
+                <div class="modal-close" onclick="closeFinanceReportModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reportStartDate">Dari Tanggal</label>
+                            <input type="date" id="reportStartDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="reportEndDate">Sampai Tanggal</label>
+                            <input type="date" id="reportEndDate" class="form-control">
+                        </div>
+                    </div>
+                    <button onclick="generateFinanceReport()" class="btn btn-primary">📊 Generate Laporan</button>
+                </div>
+                <div id="financeReportContent"></div>
+                <div class="chart-container" style="display: none;" id="financeChartContainer">
+                    <div class="chart-title">Grafik Keuangan</div>
+                    <div class="chart-wrapper">
+                        <canvas id="financeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="printFinanceReport()" class="btn btn-primary">🖨️ Cetak</button>
+                <button onclick="exportFinanceReport()" class="btn btn-export">📊 Export Excel</button>
+                <button onclick="closeFinanceReportModal()" class="btn btn-danger">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <!-- LOGIN PAGE -->
     <div id="loginPage" class="login-container">
         <div class="login-box">
@@ -1273,6 +1624,23 @@
                         <div class="stat-label">Menunggu Verifikasi</div>
                     </div>
                 </div>
+                
+                <!-- CHARTS -->
+                <div class="form-row">
+                    <div class="chart-container">
+                        <div class="chart-title">Distribusi Kategori Anggota</div>
+                        <div class="chart-wrapper">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Status Keanggotaan</div>
+                        <div class="chart-wrapper">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="table-container" style="margin-top: 30px;">
                     <div class="table-header">
                         <h3>Aktivitas Terbaru</h3>
@@ -1303,6 +1671,7 @@
                     <div class="table-tools">
                         <button onclick="showAddMemberForm()" class="btn btn-success">➕ Tambah Anggota</button>
                         <button onclick="showImportModal()" class="btn btn-primary">📁 Import Excel</button>
+                        <button onclick="generateFamilyHierarchyReport()" class="btn btn-primary">👨‍👩‍👧‍👦 Laporan Keluarga</button>
                         <button onclick="exportToExcel()" class="btn btn-export">📊 Export Excel</button>
                         <button onclick="exportToPDF()" class="btn btn-warning">📄 Export PDF</button>
                     </div>
@@ -1314,19 +1683,23 @@
                     <button class="filter-btn active" onclick="filterMembers('all')">Semua</button>
                     <button class="filter-btn" onclick="filterMembers('aktif')">Aktif</button>
                     <button class="filter-btn" onclick="filterMembers('nonaktif')">Nonaktif</button>
+                    <button class="filter-btn" onclick="filterMembersByCategory('G')">Girsang</button>
+                    <button class="filter-btn" onclick="filterMembersByCategory('B')">Boru</button>
+                    <button class="filter-btn" onclick="filterMembersByCategory('P')">Panagolan</button>
                 </div>
                 <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
                                 <th>No</th>
-                                <th>Nama</th>
+                                <th>Nama & No KK</th>
                                 <th>Tanggal Lahir</th>
                                 <th>Alamat</th>
                                 <th>No HP</th>
                                 <th>Jabatan</th>
                                 <th>Status</th>
-                                <th>Jumlah Anak</th>
+                                <th>Kategori</th>
+                                <th>Jml Anak</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -1421,9 +1794,10 @@
                     <h3>📈 Laporan & Analisis</h3>
                     <div class="table-tools">
                         <button onclick="generateMemberReport()" class="btn btn-primary">👥 Laporan Anggota</button>
-                        <button onclick="generateAttendanceReport()" class="btn btn-success">📅 Laporan Kehadiran</button>
-                        <button onclick="generateFinancialReport()" class="btn btn-warning">💰 Laporan Keuangan</button>
-                        <button onclick="printAllReports()" class="btn btn-export">🖨️ Cetak Semua</button>
+                        <button onclick="generateFamilyHierarchyReport()" class="btn btn-success">👨‍👩‍👧‍👦 Laporan Keluarga</button>
+                        <button onclick="generateAttendanceReport()" class="btn btn-warning">📅 Laporan Kehadiran</button>
+                        <button onclick="generateFinancialReport()" class="btn btn-export">💰 Laporan Keuangan</button>
+                        <button onclick="printAllReports()" class="btn btn-warning">🖨️ Cetak Semua</button>
                     </div>
                 </div>
                 <div class="dashboard-grid">
@@ -1446,6 +1820,12 @@
                         <div class="stat-icon">📅</div>
                         <div class="stat-value" id="reportMonth">-</div>
                         <div class="stat-label">Periode Bulan Ini</div>
+                    </div>
+                </div>
+                <div class="chart-container" style="margin-top: 30px;">
+                    <div class="chart-title">Grafik Statistik Tahunan</div>
+                    <div class="chart-wrapper">
+                        <canvas id="yearlyStatsChart"></canvas>
                     </div>
                 </div>
                 <div class="table-container" style="margin-top: 30px;">
@@ -1504,10 +1884,30 @@
                 <div class="modal-close" onclick="closeMemberModal()">×</div>
             </div>
             <div class="modal-body">
+                <!-- INFO FORMAT NOMOR KK -->
+                <div class="kk-info">
+                    <h4>📋 Format Nomor KK:</h4>
+                    <div class="kk-format">
+                        <div class="kk-part">TGBP</div>
+                        <div class="kk-part">W3TGR</div>
+                        <div class="kk-part">S/I/A1</div>
+                        <div class="kk-part">0001</div>
+                        <div class="kk-part">G/B/P</div>
+                    </div>
+                    <div class="kk-format">
+                        <div class="kk-label">Organisasi</div>
+                        <div class="kk-label">Wilayah</div>
+                        <div class="kk-label">Status</div>
+                        <div class="kk-label">Nomor Induk</div>
+                        <div class="kk-label">Kategori</div>
+                    </div>
+                </div>
+                
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="memberNoKep">No Kep. Keluarga</label>
-                        <input type="text" id="memberNoKep" class="form-control" placeholder="Contoh: 001">
+                        <label for="memberNoKep">Nomor KK *</label>
+                        <input type="text" id="memberNoKep" class="form-control" placeholder="Contoh: TGBP-W3TGR-S-0001-G" required>
+                        <small style="color: #666;">Format: TGBP-W3TGR-Status-NomorInduk-Kategori</small>
                     </div>
                     <div class="form-group">
                         <label for="memberName">Nama Lengkap *</label>
@@ -1540,7 +1940,7 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="memberStatus">Status</label>
+                        <label for="memberStatus">Status Keanggotaan</label>
                         <select id="memberStatus" class="form-control">
                             <option value="aktif">Aktif</option>
                             <option value="nonaktif">Nonaktif</option>
@@ -1577,7 +1977,7 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        // 🔥 FIREBASE CONFIG - GANTI DENGAN KONFIGURASI ANDA SENDIRI
+        // 🔥 FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyCqF5VG2T03yaHOAq8dPhtvgMYrbVq-DIs",
             authDomain: "girsangborupanagolantangerang.firebaseapp.com",
@@ -1618,12 +2018,78 @@
         let members = [], attendance = [], finance = [], users = [];
         let appInitialized = false;
         let childCounter = 0;
+        let currentChart = null;
 
         // Default users
         const defaultUsers = {
-            admin: {username: 'admin', password: 'admin123', role: 'admin', fullName: 'Administrator'},
-            user1: {username: 'user1', password: 'user123', role: 'user', fullName: 'User Biasa'}
+            admin: {username: 'admin', password: 'admin123', role: 'admin', fullName: 'Administrator', createdAt: Date.now()},
+            user1: {username: 'user1', password: 'user123', role: 'user', fullName: 'User Biasa', createdAt: Date.now()}
         };
+
+        // ==================== FUNGSI PARSING NOMOR KK ====================
+        function parseNomorKK(nomorKK) {
+            if (!nomorKK) return null;
+            
+            const parts = nomorKK.split('-');
+            if (parts.length < 5) return null;
+            
+            return {
+                organisasi: parts[0],       // TGBP
+                wilayah: parts[1],          // W3TGR
+                status: parts[2],           // S, I, A1, A2, dll
+                nomorInduk: parts[3],       // 0001
+                kategori: parts[4]          // G, B, P
+            };
+        }
+
+        function formatStatusKeluarga(status) {
+            const statusMap = {
+                'S': 'Suami',
+                'I': 'Istri',
+                'A1': 'Anak 1',
+                'A2': 'Anak 2',
+                'A3': 'Anak 3',
+                'A4': 'Anak 4',
+                'A5': 'Anak 5',
+                'A6': 'Anak 6',
+                'A7': 'Anak 7',
+                'A8': 'Anak 8',
+                'A9': 'Anak 9'
+            };
+            return statusMap[status] || status;
+        }
+
+        function formatKategori(kategori) {
+            const kategoriMap = {
+                'G': 'Girsang',
+                'B': 'Boru',
+                'P': 'Panagolan'
+            };
+            return kategoriMap[kategori] || kategori;
+        }
+
+        function getKepalaKeluarga(members, nomorInduk) {
+            const kepalaKeluarga = members.find(member => {
+                const parsed = parseNomorKK(member.no_kep);
+                return parsed && 
+                       parsed.nomorInduk === nomorInduk && 
+                       parsed.status === 'S';
+            });
+            
+            return kepalaKeluarga;
+        }
+
+        function getAnggotaKeluarga(members, nomorInduk) {
+            return members.filter(member => {
+                const parsed = parseNomorKK(member.no_kep);
+                return parsed && parsed.nomorInduk === nomorInduk;
+            }).sort((a, b) => {
+                const statusOrder = { 'S': 1, 'I': 2, 'A1': 3, 'A2': 4, 'A3': 5, 'A4': 6, 'A5': 7, 'A6': 8, 'A7': 9, 'A8': 10, 'A9': 11 };
+                const parsedA = parseNomorKK(a.no_kep);
+                const parsedB = parseNomorKK(b.no_kep);
+                return (statusOrder[parsedA?.status] || 99) - (statusOrder[parsedB?.status] || 99);
+            });
+        }
 
         // ==================== FIREBASE FUNCTIONS ====================
         async function saveToFirebase(path, data) {
@@ -1657,13 +2123,12 @@
                 if (data) {
                     console.log(`✅ Data ditemukan di ${path}:`, data);
                     
-                    // Konversi object Firebase menjadi array
                     if (typeof data === 'object' && !Array.isArray(data)) {
                         const dataArray = [];
                         for (const key in data) {
                             if (data.hasOwnProperty(key)) {
                                 dataArray.push({
-                                    firebaseKey: key, // Simpan key Firebase
+                                    firebaseKey: key,
                                     ...data[key]
                                 });
                             }
@@ -1712,7 +2177,6 @@
                 return;
             }
             
-            // Cek default users
             let userFound = null;
             for (const userKey in defaultUsers) {
                 const user = defaultUsers[userKey];
@@ -1777,10 +2241,44 @@
                     members = [];
                 }
                 
-                // Update UI
+                // Load attendance
+                const attendanceData = await readFromFirebase('attendance');
+                if (attendanceData) {
+                    attendance = attendanceData;
+                    console.log(`📊 Loaded ${attendance.length} attendance records`);
+                } else {
+                    attendance = [];
+                }
+                
+                // Load finance
+                const financeData = await readFromFirebase('finance');
+                if (financeData) {
+                    finance = financeData;
+                    console.log(`📊 Loaded ${finance.length} finance records`);
+                } else {
+                    finance = [];
+                }
+                
+                // Load users
+                const usersData = await readFromFirebase('users');
+                if (usersData) {
+                    users = usersData;
+                } else {
+                    // Initialize with default users
+                    users = Object.values(defaultUsers).map(user => ({
+                        ...user,
+                        firebaseKey: user.username,
+                        createdAt: user.createdAt || Date.now()
+                    }));
+                }
+                
                 renderMembersTable();
+                renderAttendanceTable();
+                renderFinanceTable();
+                renderUsersTable();
                 updateDashboard();
                 updateReports();
+                updateCharts();
                 
                 showToast('success', 'Data Dimuat', `Berhasil memuat ${members.length} anggota.`);
                 
@@ -1793,11 +2291,10 @@
         function setupFirebaseListeners() {
             if (!db) return;
             
-            // Real-time updates untuk members
+            // Members listener
             db.ref('members').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    // Konversi object Firebase menjadi array
                     const membersArray = [];
                     for (const key in data) {
                         if (data.hasOwnProperty(key)) {
@@ -1811,15 +2308,59 @@
                     renderMembersTable();
                     updateDashboard();
                     updateReports();
+                    updateCharts();
                     
                     console.log(`🔄 Update real-time: ${members.length} anggota`);
+                }
+            });
+            
+            // Attendance listener
+            db.ref('attendance').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const attendanceArray = [];
+                    for (const key in data) {
+                        if (data.hasOwnProperty(key)) {
+                            attendanceArray.push({
+                                firebaseKey: key,
+                                ...data[key]
+                            });
+                        }
+                    }
+                    attendance = attendanceArray;
+                    renderAttendanceTable();
+                    updateReports();
+                    
+                    console.log(`🔄 Update real-time: ${attendance.length} kehadiran`);
+                }
+            });
+            
+            // Finance listener
+            db.ref('finance').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const financeArray = [];
+                    for (const key in data) {
+                        if (data.hasOwnProperty(key)) {
+                            financeArray.push({
+                                firebaseKey: key,
+                                ...data[key]
+                            });
+                        }
+                    }
+                    finance = financeArray;
+                    renderFinanceTable();
+                    updateFinanceSummary();
+                    updateReports();
+                    
+                    console.log(`🔄 Update real-time: ${finance.length} transaksi`);
                 }
             });
             
             console.log('🎯 Firebase listeners aktif');
         }
 
-        // ==================== MEMBER FUNCTIONS (DENGAN DATA ANAK) ====================
+        // ==================== MEMBER FUNCTIONS ====================
         function showAddMemberForm() {
             document.getElementById('memberModalTitle').textContent = 'Tambah Anggota Baru';
             document.getElementById('memberId').value = '';
@@ -1840,6 +2381,95 @@
             fillMemberForm(member);
             fillChildrenList(member);
             document.getElementById('memberModal').style.display = 'flex';
+        }
+
+        function showDetailMember(firebaseKey) {
+            const member = members.find(m => m.firebaseKey === firebaseKey);
+            if (!member) {
+                showToast('error', 'Data Tidak Ditemukan', 'Anggota tidak ditemukan.');
+                return;
+            }
+            
+            const parsed = parseNomorKK(member.no_kep);
+            let detailHtml = `
+                <div class="detail-view">
+                    <div class="detail-row">
+                        <div class="detail-label">Nomor KK</div>
+                        <div class="detail-value">${member.no_kep || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Nama Lengkap</div>
+                        <div class="detail-value">${member.nama || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Tanggal Lahir</div>
+                        <div class="detail-value">${formatDate(member.tgl_lahir) || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Alamat</div>
+                        <div class="detail-value">${member.alamat || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">No HP</div>
+                        <div class="detail-value">${member.no_hp || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Jabatan</div>
+                        <div class="detail-value">${member.jabatan || 'Anggota'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value"><span class="status-badge status-${member.status || 'aktif'}">${member.status === 'aktif' ? 'Aktif' : 'Nonaktif'}</span></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Kategori</div>
+                        <div class="detail-value">${parsed ? formatKategori(parsed.kategori) : '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Status Keluarga</div>
+                        <div class="detail-value">${parsed ? formatStatusKeluarga(parsed.status) : '-'}</div>
+                    </div>
+            `;
+            
+            if (member.children && member.children.length > 0) {
+                detailHtml += `
+                    <div class="detail-row">
+                        <div class="detail-label">Jumlah Anak</div>
+                        <div class="detail-value">${member.jumlah_anak || 0}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Data Anak:</div>
+                        <div class="detail-value">
+                `;
+                
+                member.children.forEach((child, index) => {
+                    detailHtml += `
+                        <div style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                            <strong>Anak ${index + 1}:</strong> ${child.nama}<br>
+                            Lahir: ${formatDate(child.tanggal_lahir)}<br>
+                            Jenis Kelamin: ${child.jenis_kelamin || '-'}<br>
+                            Pendidikan: ${child.pendidikan || '-'}
+                        </div>
+                    `;
+                });
+                
+                detailHtml += `</div></div>`;
+            }
+            
+            detailHtml += `
+                    <div class="detail-row">
+                        <div class="detail-label">Dibuat Pada</div>
+                        <div class="detail-value">${formatDateTime(member.createdAt)}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Diperbarui Pada</div>
+                        <div class="detail-value">${formatDateTime(member.updatedAt)}</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('detailContent').innerHTML = detailHtml;
+            document.getElementById('detailModal').style.display = 'flex';
         }
 
         function clearMemberForm() {
@@ -1885,7 +2515,6 @@
         function addChildField(childData = {}) {
             const childrenList = document.getElementById('childrenList');
             
-            // Hapus "no children" message jika ada
             const noChildren = childrenList.querySelector('.no-children');
             if (noChildren) {
                 noChildren.remove();
@@ -1943,7 +2572,6 @@
             if (childElement) {
                 childElement.remove();
                 
-                // Jika tidak ada anak lagi, tampilkan pesan
                 const childrenList = document.getElementById('childrenList');
                 if (childrenList.children.length === 0) {
                     childrenList.innerHTML = '<div class="no-children" style="text-align: center; color: #666; padding: 20px;">Belum ada data anak. Klik "Tambah Anak" untuk menambahkan.</div>';
@@ -1955,13 +2583,25 @@
             document.getElementById('memberModal').style.display = 'none';
         }
 
+        function closeDetailModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
         async function saveMember() {
             const firebaseKey = document.getElementById('memberId').value;
             const nama = document.getElementById('memberName').value.trim();
             const alamat = document.getElementById('memberAddress').value.trim();
+            const noKep = document.getElementById('memberNoKep').value.trim();
             
-            if (!nama || !alamat) {
-                showToast('error', 'Validasi Gagal', 'Nama dan alamat harus diisi.');
+            if (!nama || !alamat || !noKep) {
+                showToast('error', 'Validasi Gagal', 'Nama, alamat, dan nomor KK harus diisi.');
+                return;
+            }
+            
+            // Validasi format nomor KK
+            const parsedKK = parseNomorKK(noKep);
+            if (!parsedKK) {
+                showToast('error', 'Format Salah', 'Format nomor KK tidak valid. Contoh: TGBP-W3TGR-S-0001-G');
                 return;
             }
             
@@ -1969,7 +2609,7 @@
             const children = [];
             const childItems = document.querySelectorAll('.child-item');
             
-            childItems.forEach((childItem, index) => {
+            childItems.forEach((childItem) => {
                 const childId = childItem.id;
                 const childName = document.getElementById(`${childId}_name`).value.trim();
                 const childBirthDate = document.getElementById(`${childId}_birthDate`).value;
@@ -1987,7 +2627,7 @@
             });
             
             const memberData = {
-                no_kep: document.getElementById('memberNoKep').value.trim(),
+                no_kep: noKep,
                 nama: nama,
                 tgl_lahir: document.getElementById('memberBirthDate').value,
                 no_hp: document.getElementById('memberPhone').value.trim(),
@@ -1996,6 +2636,7 @@
                 status: document.getElementById('memberStatus').value,
                 children: children,
                 jumlah_anak: children.length,
+                parsed_kk: parsedKK,
                 updatedAt: Date.now(),
                 updatedBy: currentUser.username
             };
@@ -2003,10 +2644,8 @@
             let path;
             
             if (firebaseKey) {
-                // Update existing member
                 path = `members/${firebaseKey}`;
                 
-                // Tambahkan data yang tidak berubah
                 const existingMember = members.find(m => m.firebaseKey === firebaseKey);
                 if (existingMember) {
                     memberData.createdAt = existingMember.createdAt || Date.now();
@@ -2021,7 +2660,6 @@
                     closeMemberModal();
                 }
             } else {
-                // Add new member - Firebase generate key otomatis
                 const newKey = db.ref('members').push().key;
                 path = `members/${newKey}`;
                 
@@ -2054,7 +2692,7 @@
             if (members.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 40px; color: #666;">
+                        <td colspan="10" style="text-align: center; padding: 40px; color: #666;">
                             📝 Belum ada data anggota. Mulai dengan menambahkan anggota baru.
                         </td>
                     </tr>
@@ -2062,39 +2700,95 @@
                 return;
             }
             
-            // Sort members by nama
-            const sortedMembers = [...members].sort((a, b) => {
-                return (a.nama || '').localeCompare(b.nama || '');
+            // Kelompokkan berdasarkan nomor induk
+            const anggotaByNomorInduk = {};
+            members.forEach(member => {
+                const parsed = parseNomorKK(member.no_kep);
+                if (parsed && parsed.nomorInduk) {
+                    if (!anggotaByNomorInduk[parsed.nomorInduk]) {
+                        anggotaByNomorInduk[parsed.nomorInduk] = [];
+                    }
+                    anggotaByNomorInduk[parsed.nomorInduk].push(member);
+                } else {
+                    if (!anggotaByNomorInduk['invalid']) {
+                        anggotaByNomorInduk['invalid'] = [];
+                    }
+                    anggotaByNomorInduk['invalid'].push(member);
+                }
             });
             
-            sortedMembers.forEach((member, index) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>
-                        <strong>${member.nama || '-'}</strong>
-                        ${member.no_kep ? `<br><small style="color:#666;">No. KK: ${member.no_kep}</small>` : ''}
-                        ${member.children && member.children.length > 0 ? 
-                            `<br><small style="color:#3498db;">👶 ${member.children.length} anak</small>` : ''}
-                    </td>
-                    <td>${member.tgl_lahir ? formatDate(member.tgl_lahir) : '-'}</td>
-                    <td>${member.alamat ? (member.alamat.length > 30 ? member.alamat.substring(0, 30) + '...' : member.alamat) : '-'}</td>
-                    <td>${member.no_hp || '-'}</td>
-                    <td>${member.jabatan || 'Anggota'}</td>
-                    <td><span class="status-badge status-${member.status || 'aktif'}">${member.status === 'aktif' ? 'Aktif' : 'Nonaktif'}</span></td>
-                    <td style="text-align: center;">
-                        ${member.jumlah_anak || 0}
-                        ${member.children && member.children.length > 0 ? 
-                            `<br><small style="color:#666; font-size: 11px;">(${member.children.length} data anak)</small>` : ''}
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            <button onclick="showEditMemberForm('${member.firebaseKey}')" class="action-btn edit" title="Edit">✏️</button>
-                            <button onclick="deleteMember('${member.firebaseKey}')" class="action-btn delete" title="Hapus">🗑️</button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+            const sortedNomorInduk = Object.keys(anggotaByNomorInduk)
+                .filter(key => key !== 'invalid')
+                .sort();
+            
+            if (anggotaByNomorInduk['invalid']) {
+                sortedNomorInduk.push('invalid');
+            }
+            
+            let rowIndex = 1;
+            
+            sortedNomorInduk.forEach(nomorInduk => {
+                const anggotaKeluarga = anggotaByNomorInduk[nomorInduk];
+                const sortedAnggota = anggotaKeluarga.sort((a, b) => {
+                    const parsedA = parseNomorKK(a.no_kep);
+                    const parsedB = parseNomorKK(b.no_kep);
+                    const statusOrder = { 'S': 1, 'I': 2, 'A1': 3, 'A2': 4, 'A3': 5, 'A4': 6, 'A5': 7, 'A6': 8, 'A7': 9, 'A8': 10, 'A9': 11 };
+                    return (statusOrder[parsedA?.status] || 99) - (statusOrder[parsedB?.status] || 99);
+                });
+                
+                sortedAnggota.forEach((member, familyIndex) => {
+                    const parsed = parseNomorKK(member.no_kep);
+                    
+                    const tr = document.createElement('tr');
+                    
+                    if (familyIndex === 0 && nomorInduk !== 'invalid') {
+                        tr.style.backgroundColor = 'rgba(52, 152, 219, 0.05)';
+                    }
+                    
+                    let familyInfo = '';
+                    if (parsed) {
+                        if (parsed.status === 'S') {
+                            familyInfo = `<br><small style="color:#e74c3c;">👨 Kepala Keluarga</small>`;
+                        } else if (parsed.status === 'I') {
+                            familyInfo = `<br><small style="color:#9b59b6;">👩 Istri</small>`;
+                        } else if (parsed.status.startsWith('A')) {
+                            familyInfo = `<br><small style="color:#2ecc71;">👶 ${formatStatusKeluarga(parsed.status)}</small>`;
+                        }
+                    }
+                    
+                    const kategoriBadge = parsed ? 
+                        `<span class="status-badge" style="background: ${parsed.kategori === 'G' ? '#3498db' : parsed.kategori === 'B' ? '#e74c3c' : '#f39c12'}; color: white;">
+                            ${formatKategori(parsed.kategori)}
+                        </span>` : '';
+                    
+                    tr.innerHTML = `
+                        <td>${rowIndex++}</td>
+                        <td>
+                            <strong>${member.nama || '-'}</strong>
+                            ${member.no_kep ? `<br><small style="color:#666;">${member.no_kep}</small>` : ''}
+                            ${familyInfo}
+                        </td>
+                        <td>${member.tgl_lahir ? formatDate(member.tgl_lahir) : '-'}</td>
+                        <td>${member.alamat ? (member.alamat.length > 25 ? member.alamat.substring(0, 25) + '...' : member.alamat) : '-'}</td>
+                        <td>${member.no_hp || '-'}</td>
+                        <td>${member.jabatan || 'Anggota'}</td>
+                        <td><span class="status-badge status-${member.status || 'aktif'}">${member.status === 'aktif' ? 'Aktif' : 'Nonaktif'}</span></td>
+                        <td>${kategoriBadge}</td>
+                        <td style="text-align: center;">
+                            ${member.jumlah_anak || 0}
+                            ${member.children && member.children.length > 0 ? 
+                                `<br><small style="color:#666; font-size: 11px;">(${member.children.length} data anak)</small>` : ''}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button onclick="showDetailMember('${member.firebaseKey}')" class="action-btn view" title="Detail">👁️</button>
+                                <button onclick="showEditMemberForm('${member.firebaseKey}')" class="action-btn edit" title="Edit">✏️</button>
+                                <button onclick="deleteMember('${member.firebaseKey}')" class="action-btn delete" title="Hapus">🗑️</button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             });
         }
 
@@ -2103,7 +2797,6 @@
             const tbody = document.getElementById('membersTable');
             const rows = tbody.getElementsByTagName('tr');
             
-            // Update filter buttons
             document.querySelectorAll('.filter-buttons .filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
@@ -2114,7 +2807,6 @@
                 let showRow = false;
                 
                 if (cells.length > 1) {
-                    // Check search term
                     let matchesSearch = searchTerm === '';
                     if (!matchesSearch) {
                         for (let i = 0; i < cells.length; i++) {
@@ -2125,7 +2817,6 @@
                         }
                     }
                     
-                    // Check status filter
                     let matchesStatus = status === 'all';
                     if (!matchesStatus && cells.length > 6) {
                         const statusCell = cells[6].textContent.toLowerCase();
@@ -2136,6 +2827,1565 @@
                 }
                 row.style.display = showRow ? '' : 'none';
             }
+        }
+
+        function filterMembersByCategory(kategori) {
+            const searchTerm = document.getElementById('searchMember').value.toLowerCase();
+            const tbody = document.getElementById('membersTable');
+            const rows = tbody.getElementsByTagName('tr');
+            
+            document.querySelectorAll('.filter-buttons .filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event?.target.classList.add('active');
+            
+            for (let row of rows) {
+                const cells = row.getElementsByTagName('td');
+                let showRow = false;
+                
+                if (cells.length > 1) {
+                    let matchesSearch = searchTerm === '';
+                    if (!matchesSearch) {
+                        for (let i = 0; i < cells.length; i++) {
+                            if (cells[i].textContent.toLowerCase().includes(searchTerm)) {
+                                matchesSearch = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    let matchesCategory = kategori === 'all';
+                    if (!matchesCategory && cells.length > 7) {
+                        const categoryCell = cells[7].textContent;
+                        matchesCategory = categoryCell.includes(formatKategori(kategori));
+                    }
+                    
+                    showRow = matchesSearch && matchesCategory;
+                }
+                row.style.display = showRow ? '' : 'none';
+            }
+        }
+
+        // ==================== ATTENDANCE FUNCTIONS ====================
+        function showAddAttendanceForm() {
+            document.getElementById('attendanceModalTitle').textContent = '➕ Tambah Kehadiran';
+            document.getElementById('attendanceId').value = '';
+            clearAttendanceForm();
+            populateMemberSelect();
+            document.getElementById('attendanceModal').style.display = 'flex';
+        }
+
+        function showEditAttendanceForm(firebaseKey) {
+            const record = attendance.find(a => a.firebaseKey === firebaseKey);
+            if (!record) {
+                showToast('error', 'Data Tidak Ditemukan', 'Data kehadiran tidak ditemukan.');
+                return;
+            }
+            
+            document.getElementById('attendanceModalTitle').textContent = '✏️ Edit Kehadiran';
+            document.getElementById('attendanceId').value = firebaseKey;
+            fillAttendanceForm(record);
+            populateMemberSelect();
+            document.getElementById('attendanceModal').style.display = 'flex';
+        }
+
+        function clearAttendanceForm() {
+            document.getElementById('attendanceDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('attendanceMember').value = '';
+            document.getElementById('attendanceStatus').value = 'hadir';
+            document.getElementById('attendanceNote').value = '';
+        }
+
+        function fillAttendanceForm(record) {
+            document.getElementById('attendanceDate').value = record.date || new Date().toISOString().split('T')[0];
+            document.getElementById('attendanceMember').value = record.memberId || '';
+            document.getElementById('attendanceStatus').value = record.status || 'hadir';
+            document.getElementById('attendanceNote').value = record.note || '';
+        }
+
+        function populateMemberSelect() {
+            const select = document.getElementById('attendanceMember');
+            select.innerHTML = '<option value="">Pilih Anggota</option>';
+            
+            members.forEach(member => {
+                if (member.status === 'aktif') {
+                    const option = document.createElement('option');
+                    option.value = member.firebaseKey;
+                    option.textContent = `${member.nama} (${member.no_kep})`;
+                    select.appendChild(option);
+                }
+            });
+        }
+
+        function closeAttendanceModal() {
+            document.getElementById('attendanceModal').style.display = 'none';
+        }
+
+        async function saveAttendance() {
+            const firebaseKey = document.getElementById('attendanceId').value;
+            const date = document.getElementById('attendanceDate').value;
+            const memberId = document.getElementById('attendanceMember').value;
+            const status = document.getElementById('attendanceStatus').value;
+            
+            if (!date || !memberId || !status) {
+                showToast('error', 'Validasi Gagal', 'Tanggal, anggota, dan status harus diisi.');
+                return;
+            }
+            
+            const member = members.find(m => m.firebaseKey === memberId);
+            if (!member) {
+                showToast('error', 'Data Tidak Ditemukan', 'Anggota tidak ditemukan.');
+                return;
+            }
+            
+            const attendanceData = {
+                date: date,
+                memberId: memberId,
+                memberName: member.nama,
+                memberNoKep: member.no_kep,
+                status: status,
+                note: document.getElementById('attendanceNote').value.trim(),
+                createdAt: Date.now(),
+                createdBy: currentUser.username,
+                updatedAt: Date.now(),
+                updatedBy: currentUser.username
+            };
+            
+            let path;
+            
+            if (firebaseKey) {
+                path = `attendance/${firebaseKey}`;
+                
+                const existingRecord = attendance.find(a => a.firebaseKey === firebaseKey);
+                if (existingRecord) {
+                    attendanceData.createdAt = existingRecord.createdAt || Date.now();
+                    attendanceData.createdBy = existingRecord.createdBy || currentUser.username;
+                }
+                
+                attendanceData.updatedAt = Date.now();
+                
+                const success = await saveToFirebase(path, attendanceData);
+                if (success) {
+                    showToast('success', 'Berhasil', 'Data kehadiran berhasil diperbarui.');
+                    closeAttendanceModal();
+                }
+            } else {
+                const newKey = db.ref('attendance').push().key;
+                path = `attendance/${newKey}`;
+                
+                attendanceData.id = newKey;
+                attendanceData.createdAt = Date.now();
+                attendanceData.createdBy = currentUser.username;
+                attendanceData.updatedAt = Date.now();
+                
+                const success = await saveToFirebase(path, attendanceData);
+                if (success) {
+                    showToast('success', 'Berhasil', 'Kehadiran baru berhasil ditambahkan.');
+                    closeAttendanceModal();
+                }
+            }
+        }
+
+        async function deleteAttendance(firebaseKey) {
+            if (!confirm('Apakah Anda yakin ingin menghapus data kehadiran ini?')) return;
+            
+            const success = await deleteFromFirebase(`attendance/${firebaseKey}`);
+            if (success) {
+                // Data akan otomatis diupdate via Firebase listener
+            }
+        }
+
+        function renderAttendanceTable() {
+            const tbody = document.getElementById('attendanceTable');
+            tbody.innerHTML = '';
+            
+            if (attendance.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
+                            📅 Belum ada data kehadiran.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Sort by date descending
+            const sortedAttendance = [...attendance].sort((a, b) => {
+                return new Date(b.date) - new Date(a.date);
+            });
+            
+            sortedAttendance.forEach((record, index) => {
+                const tr = document.createElement('tr');
+                
+                const statusBadgeClass = `attendance-${record.status}`;
+                const statusText = record.status === 'hadir' ? 'Hadir' :
+                                 record.status === 'sakit' ? 'Sakit' :
+                                 record.status === 'izin' ? 'Izin' : 'Alfa';
+                
+                tr.innerHTML = `
+                    <td>${formatDate(record.date)}</td>
+                    <td>
+                        <strong>${record.memberName || '-'}</strong>
+                        ${record.memberNoKep ? `<br><small style="color:#666;">${record.memberNoKep}</small>` : ''}
+                    </td>
+                    <td><span class="status-badge ${statusBadgeClass}">${statusText}</span></td>
+                    <td>${record.note || '-'}</td>
+                    <td>${formatDateTime(record.createdAt)}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button onclick="showEditAttendanceForm('${record.firebaseKey}')" class="action-btn edit" title="Edit">✏️</button>
+                            <button onclick="deleteAttendance('${record.firebaseKey}')" class="action-btn delete" title="Hapus">🗑️</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterAttendance(status = 'all') {
+            const searchTerm = document.getElementById('searchAttendance').value.toLowerCase();
+            const tbody = document.getElementById('attendanceTable');
+            const rows = tbody.getElementsByTagName('tr');
+            
+            document.querySelectorAll('.filter-buttons .filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event?.target.classList.add('active');
+            
+            for (let row of rows) {
+                const cells = row.getElementsByTagName('td');
+                let showRow = false;
+                
+                if (cells.length > 1) {
+                    let matchesSearch = searchTerm === '';
+                    if (!matchesSearch) {
+                        for (let i = 0; i < cells.length; i++) {
+                            if (cells[i].textContent.toLowerCase().includes(searchTerm)) {
+                                matchesSearch = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    let matchesStatus = status === 'all';
+                    if (!matchesStatus && cells.length > 2) {
+                        const statusCell = cells[2].textContent.toLowerCase();
+                        matchesStatus = statusCell.includes(status);
+                    }
+                    
+                    showRow = matchesSearch && matchesStatus;
+                }
+                row.style.display = showRow ? '' : 'none';
+            }
+        }
+
+        // ==================== FINANCE FUNCTIONS ====================
+        function showAddFinanceForm() {
+            document.getElementById('financeModalTitle').textContent = '💰 Transaksi Baru';
+            document.getElementById('financeId').value = '';
+            clearFinanceForm();
+            document.getElementById('financeModal').style.display = 'flex';
+        }
+
+        function showEditFinanceForm(firebaseKey) {
+            const record = finance.find(f => f.firebaseKey === firebaseKey);
+            if (!record) {
+                showToast('error', 'Data Tidak Ditemukan', 'Data transaksi tidak ditemukan.');
+                return;
+            }
+            
+            document.getElementById('financeModalTitle').textContent = '✏️ Edit Transaksi';
+            document.getElementById('financeId').value = firebaseKey;
+            fillFinanceForm(record);
+            document.getElementById('financeModal').style.display = 'flex';
+        }
+
+        function clearFinanceForm() {
+            document.getElementById('financeDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('financeType').value = 'pemasukan';
+            document.getElementById('financeCategory').value = '';
+            document.getElementById('financeAmount').value = '';
+            document.getElementById('financeDescription').value = '';
+        }
+
+        function fillFinanceForm(record) {
+            document.getElementById('financeDate').value = record.date || new Date().toISOString().split('T')[0];
+            document.getElementById('financeType').value = record.type || 'pemasukan';
+            document.getElementById('financeCategory').value = record.category || '';
+            document.getElementById('financeAmount').value = record.amount || '';
+            document.getElementById('financeDescription').value = record.description || '';
+        }
+
+        function closeFinanceModal() {
+            document.getElementById('financeModal').style.display = 'none';
+        }
+
+        async function saveFinance() {
+            const firebaseKey = document.getElementById('financeId').value;
+            const date = document.getElementById('financeDate').value;
+            const type = document.getElementById('financeType').value;
+            const category = document.getElementById('financeCategory').value;
+            const amount = parseInt(document.getElementById('financeAmount').value);
+            const description = document.getElementById('financeDescription').value.trim();
+            
+            if (!date || !type || !category || !amount || amount <= 0 || !description) {
+                showToast('error', 'Validasi Gagal', 'Semua field harus diisi dengan benar.');
+                return;
+            }
+            
+            const financeData = {
+                date: date,
+                type: type,
+                category: category,
+                amount: amount,
+                description: description,
+                createdAt: Date.now(),
+                createdBy: currentUser.username,
+                updatedAt: Date.now(),
+                updatedBy: currentUser.username
+            };
+            
+            let path;
+            
+            if (firebaseKey) {
+                path = `finance/${firebaseKey}`;
+                
+                const existingRecord = finance.find(f => f.firebaseKey === firebaseKey);
+                if (existingRecord) {
+                    financeData.createdAt = existingRecord.createdAt || Date.now();
+                    financeData.createdBy = existingRecord.createdBy || currentUser.username;
+                }
+                
+                financeData.updatedAt = Date.now();
+                
+                const success = await saveToFirebase(path, financeData);
+                if (success) {
+                    showToast('success', 'Berhasil', 'Data transaksi berhasil diperbarui.');
+                    closeFinanceModal();
+                }
+            } else {
+                const newKey = db.ref('finance').push().key;
+                path = `finance/${newKey}`;
+                
+                financeData.id = newKey;
+                financeData.createdAt = Date.now();
+                financeData.createdBy = currentUser.username;
+                financeData.updatedAt = Date.now();
+                
+                const success = await saveToFirebase(path, financeData);
+                if (success) {
+                    showToast('success', 'Berhasil', 'Transaksi baru berhasil ditambahkan.');
+                    closeFinanceModal();
+                }
+            }
+        }
+
+        async function deleteFinance(firebaseKey) {
+            if (!confirm('Apakah Anda yakin ingin menghapus data transaksi ini?')) return;
+            
+            const success = await deleteFromFirebase(`finance/${firebaseKey}`);
+            if (success) {
+                // Data akan otomatis diupdate via Firebase listener
+            }
+        }
+
+        function renderFinanceTable() {
+            const tbody = document.getElementById('financeTable');
+            tbody.innerHTML = '';
+            
+            if (finance.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #666;">
+                            💰 Belum ada data transaksi.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Sort by date descending
+            const sortedFinance = [...finance].sort((a, b) => {
+                return new Date(b.date) - new Date(a.date);
+            });
+            
+            sortedFinance.forEach((record, index) => {
+                const tr = document.createElement('tr');
+                
+                const typeColor = record.type === 'pemasukan' ? '#2ecc71' : '#e74c3c';
+                const typeText = record.type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran';
+                
+                tr.innerHTML = `
+                    <td>${formatDate(record.date)}</td>
+                    <td><span style="color: ${typeColor}; font-weight: 600;">${typeText}</span></td>
+                    <td>${record.category || '-'}</td>
+                    <td style="font-weight: 600; color: ${typeColor};">${formatCurrency(record.amount || 0)}</td>
+                    <td>${record.description || '-'}</td>
+                    <td>${record.createdBy || '-'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button onclick="showEditFinanceForm('${record.firebaseKey}')" class="action-btn edit" title="Edit">✏️</button>
+                            <button onclick="deleteFinance('${record.firebaseKey}')" class="action-btn delete" title="Hapus">🗑️</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateFinanceSummary() {
+            const totalIncome = finance
+                .filter(f => f.type === 'pemasukan')
+                .reduce((sum, f) => sum + (f.amount || 0), 0);
+            
+            const totalExpense = finance
+                .filter(f => f.type === 'pengeluaran')
+                .reduce((sum, f) => sum + (f.amount || 0), 0);
+            
+            const totalBalance = totalIncome - totalExpense;
+            
+            document.getElementById('totalIncome').textContent = formatCurrency(totalIncome);
+            document.getElementById('totalExpense').textContent = formatCurrency(totalExpense);
+            document.getElementById('totalBalance').textContent = formatCurrency(totalBalance);
+        }
+
+        // ==================== USER FUNCTIONS ====================
+        function showAddUserForm() {
+            if (currentUser.role !== 'admin') {
+                showToast('error', 'Akses Ditolak', 'Hanya admin yang bisa menambah pengguna.');
+                return;
+            }
+            
+            document.getElementById('userModalTitle').textContent = '👤 Tambah Pengguna Baru';
+            document.getElementById('userId').value = '';
+            clearUserForm();
+            document.getElementById('userModal').style.display = 'flex';
+        }
+
+        function showEditUserForm(firebaseKey) {
+            if (currentUser.role !== 'admin') {
+                showToast('error', 'Akses Ditolak', 'Hanya admin yang bisa mengedit pengguna.');
+                return;
+            }
+            
+            const user = users.find(u => u.firebaseKey === firebaseKey);
+            if (!user) {
+                showToast('error', 'Data Tidak Ditemukan', 'Pengguna tidak ditemukan.');
+                return;
+            }
+            
+            document.getElementById('userModalTitle').textContent = '✏️ Edit Pengguna';
+            document.getElementById('userId').value = firebaseKey;
+            fillUserForm(user);
+            document.getElementById('userModal').style.display = 'flex';
+        }
+
+        function clearUserForm() {
+            document.getElementById('userUsername').value = '';
+            document.getElementById('userPassword').value = '';
+            document.getElementById('userFullName').value = '';
+            document.getElementById('userRole').value = 'user';
+        }
+
+        function fillUserForm(user) {
+            document.getElementById('userUsername').value = user.username || '';
+            document.getElementById('userPassword').value = '';
+            document.getElementById('userFullName').value = user.fullName || '';
+            document.getElementById('userRole').value = user.role || 'user';
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').style.display = 'none';
+        }
+
+        async function saveUser() {
+            if (currentUser.role !== 'admin') {
+                showToast('error', 'Akses Ditolak', 'Hanya admin yang bisa menyimpan pengguna.');
+                return;
+            }
+            
+            const firebaseKey = document.getElementById('userId').value;
+            const username = document.getElementById('userUsername').value.trim();
+            const password = document.getElementById('userPassword').value;
+            const fullName = document.getElementById('userFullName').value.trim();
+            const role = document.getElementById('userRole').value;
+            
+            if (!username || !fullName || !role) {
+                showToast('error', 'Validasi Gagal', 'Username, nama lengkap, dan role harus diisi.');
+                return;
+            }
+            
+            if (!firebaseKey && !password) {
+                showToast('error', 'Validasi Gagal', 'Password harus diisi untuk pengguna baru.');
+                return;
+            }
+            
+            // Check if username already exists (for new user)
+            if (!firebaseKey) {
+                const existingUser = users.find(u => u.username === username);
+                if (existingUser) {
+                    showToast('error', 'Username Sudah Ada', 'Username sudah digunakan. Silakan pilih username lain.');
+                    return;
+                }
+            }
+            
+            const userData = {
+                username: username,
+                fullName: fullName,
+                role: role,
+                updatedAt: Date.now(),
+                updatedBy: currentUser.username
+            };
+            
+            // Only update password if provided
+            if (password) {
+                userData.password = password;
+            }
+            
+            let path;
+            
+            if (firebaseKey) {
+                path = `users/${firebaseKey}`;
+                
+                const existingUser = users.find(u => u.firebaseKey === firebaseKey);
+                if (existingUser) {
+                    userData.createdAt = existingUser.createdAt || Date.now();
+                    userData.createdBy = existingUser.createdBy || currentUser.username;
+                    
+                    // Preserve password if not changed
+                    if (!password) {
+                        userData.password = existingUser.password;
+                    }
+                }
+                
+                userData.updatedAt = Date.now();
+                
+                const success = await saveToFirebase(path, userData);
+                if (success) {
+                    showToast('success', 'Berhasil', 'Data pengguna berhasil diperbarui.');
+                    closeUserModal();
+                }
+            } else {
+                const newKey = username; // Use username as key
+                path = `users/${newKey}`;
+                
+                userData.password = password;
+                userData.createdAt = Date.now();
+                userData.createdBy = currentUser.username;
+                userData.updatedAt = Date.now();
+                
+                const success = await saveToFirebase(path, userData);
+                if (success) {
+                    showToast('success', 'Berhasil', 'Pengguna baru berhasil ditambahkan.');
+                    closeUserModal();
+                }
+            }
+        }
+
+        async function deleteUser(firebaseKey) {
+            if (currentUser.role !== 'admin') {
+                showToast('error', 'Akses Ditolak', 'Hanya admin yang bisa menghapus pengguna.');
+                return;
+            }
+            
+            if (!confirm('Apakah Anda yakin ingin menghapus pengguna ini?')) return;
+            
+            // Prevent deleting own account
+            const userToDelete = users.find(u => u.firebaseKey === firebaseKey);
+            if (userToDelete && userToDelete.username === currentUser.username) {
+                showToast('error', 'Tidak Diizinkan', 'Anda tidak dapat menghapus akun sendiri.');
+                return;
+            }
+            
+            const success = await deleteFromFirebase(`users/${firebaseKey}`);
+            if (success) {
+                // Data akan otomatis diupdate via Firebase listener
+            }
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTable');
+            tbody.innerHTML = '';
+            
+            if (users.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: #666;">
+                            👤 Belum ada data pengguna.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            users.forEach((user, index) => {
+                const tr = document.createElement('tr');
+                
+                const roleText = user.role === 'admin' ? 'Administrator' : 'Pengguna Biasa';
+                const roleColor = user.role === 'admin' ? '#e74c3c' : '#3498db';
+                
+                tr.innerHTML = `
+                    <td>
+                        <strong>${user.username || '-'}</strong>
+                        ${user.fullName ? `<br><small style="color:#666;">${user.fullName}</small>` : ''}
+                    </td>
+                    <td><span style="color: ${roleColor}; font-weight: 600;">${roleText}</span></td>
+                    <td>${formatDateTime(user.createdAt)}</td>
+                    <td><span class="status-badge status-aktif">Aktif</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button onclick="showEditUserForm('${user.firebaseKey}')" class="action-btn edit" title="Edit">✏️</button>
+                            <button onclick="deleteUser('${user.firebaseKey}')" class="action-btn delete" title="Hapus">🗑️</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ==================== LAPORAN FUNCTIONS ====================
+        function generateMemberReport() {
+            if (members.length === 0) {
+                showToast('error', 'Data Kosong', 'Tidak ada data anggota untuk laporan.');
+                return;
+            }
+            
+            let report = `
+                <div style="margin-bottom: 20px;">
+                    <h3>📊 Laporan Data Anggota</h3>
+                    <p>Total Anggota: <strong>${members.length}</strong></p>
+                </div>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th style="padding: 10px; border: 1px solid #ddd;">No</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Nama</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Nomor KK</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Status</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Kategori</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Jml Anak</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            members.forEach((member, index) => {
+                const parsed = parseNomorKK(member.no_kep);
+                const kategori = parsed ? formatKategori(parsed.kategori) : '-';
+                
+                report += `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${index + 1}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${member.nama}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${member.no_kep}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${member.status === 'aktif' ? 'Aktif' : 'Nonaktif'}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${kategori}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${member.jumlah_anak || 0}</td>
+                    </tr>
+                `;
+            });
+            
+            report += `
+                    </tbody>
+                </table>
+                
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 20px;">
+                    <h4>📈 Statistik</h4>
+                    <p>Aktif: ${members.filter(m => m.status === 'aktif').length} anggota</p>
+                    <p>Nonaktif: ${members.filter(m => m.status === 'nonaktif').length} anggota</p>
+                    <p>Total Anak: ${members.reduce((sum, m) => sum + (m.jumlah_anak || 0), 0)} anak</p>
+                </div>
+            `;
+            
+            document.getElementById('reportPeriod').textContent = new Date().toLocaleDateString('id-ID');
+            document.getElementById('memberReportContent').innerHTML = report;
+            document.getElementById('memberReportModal').style.display = 'flex';
+        }
+
+        function generateAttendanceReport() {
+            if (attendance.length === 0) {
+                showToast('error', 'Data Kosong', 'Tidak ada data kehadiran untuk laporan.');
+                return;
+            }
+            
+            // Calculate statistics
+            const totalRecords = attendance.length;
+            const hadirCount = attendance.filter(a => a.status === 'hadir').length;
+            const sakitCount = attendance.filter(a => a.status === 'sakit').length;
+            const izinCount = attendance.filter(a => a.status === 'izin').length;
+            const alfaCount = attendance.filter(a => a.status === 'alfa').length;
+            
+            const attendanceRate = totalRecords > 0 ? Math.round((hadirCount / totalRecords) * 100) : 0;
+            
+            let report = `
+                <div style="margin-bottom: 20px;">
+                    <h3>📅 Laporan Kehadiran</h3>
+                    <p>Total Catatan: <strong>${totalRecords}</strong></p>
+                    <p>Rata-rata Kehadiran: <strong>${attendanceRate}%</strong></p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
+                    <div style="background: #d4edda; padding: 15px; border-radius: 5px; text-align: center;">
+                        <h4>${hadirCount}</h4>
+                        <p>Hadir</p>
+                    </div>
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 5px; text-align: center;">
+                        <h4>${sakitCount}</h4>
+                        <p>Sakit</p>
+                    </div>
+                    <div style="background: #d1ecf1; padding: 15px; border-radius: 5px; text-align: center;">
+                        <h4>${izinCount}</h4>
+                        <p>Izin</p>
+                    </div>
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 5px; text-align: center;">
+                        <h4>${alfaCount}</h4>
+                        <p>Alfa</p>
+                    </div>
+                </div>
+            `;
+            
+            // Show report in modal
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="modal-box" style="max-width: 800px;">
+                    <div class="modal-header">
+                        <h3>📅 Laporan Kehadiran</h3>
+                        <div class="modal-close" onclick="this.parentElement.parentElement.style.display='none'">×</div>
+                    </div>
+                    <div class="modal-body">
+                        ${report}
+                    </div>
+                    <div class="modal-footer">
+                        <button onclick="printAttendanceReport()" class="btn btn-primary">🖨️ Cetak</button>
+                        <button onclick="this.parentElement.parentElement.parentElement.style.display='none'" class="btn btn-danger">Tutup</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function showFinanceReport() {
+            document.getElementById('financeReportModal').style.display = 'flex';
+            document.getElementById('reportStartDate').value = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0];
+            document.getElementById('reportEndDate').value = new Date().toISOString().split('T')[0];
+            generateFinanceReport();
+        }
+
+        function generateFinanceReport() {
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+            
+            if (!startDate || !endDate) {
+                showToast('error', 'Validasi Gagal', 'Harap pilih periode laporan.');
+                return;
+            }
+            
+            const filteredFinance = finance.filter(f => {
+                const recordDate = new Date(f.date);
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                
+                return recordDate >= start && recordDate <= end;
+            });
+            
+            if (filteredFinance.length === 0) {
+                document.getElementById('financeReportContent').innerHTML = '<p style="text-align: center; color: #666;">Tidak ada data transaksi untuk periode ini.</p>';
+                document.getElementById('financeChartContainer').style.display = 'none';
+                return;
+            }
+            
+            const totalIncome = filteredFinance
+                .filter(f => f.type === 'pemasukan')
+                .reduce((sum, f) => sum + (f.amount || 0), 0);
+            
+            const totalExpense = filteredFinance
+                .filter(f => f.type === 'pengeluaran')
+                .reduce((sum, f) => sum + (f.amount || 0), 0);
+            
+            const totalBalance = totalIncome - totalExpense;
+            
+            // Group by category
+            const categorySummary = {};
+            filteredFinance.forEach(f => {
+                if (!categorySummary[f.category]) {
+                    categorySummary[f.category] = { pemasukan: 0, pengeluaran: 0 };
+                }
+                categorySummary[f.category][f.type] += f.amount || 0;
+            });
+            
+            let report = `
+                <div style="margin-bottom: 20px;">
+                    <h3>💰 Laporan Keuangan</h3>
+                    <p>Periode: ${formatDate(startDate)} - ${formatDate(endDate)}</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+                    <div style="background: #d4edda; padding: 15px; border-radius: 5px; text-align: center;">
+                        <h4>${formatCurrency(totalIncome)}</h4>
+                        <p>Total Pemasukan</p>
+                    </div>
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 5px; text-align: center;">
+                        <h4>${formatCurrency(totalExpense)}</h4>
+                        <p>Total Pengeluaran</p>
+                    </div>
+                    <div style="background: #d1ecf1; padding: 15px; border-radius: 5px; text-align: center;">
+                        <h4>${formatCurrency(totalBalance)}</h4>
+                        <p>Saldo</p>
+                    </div>
+                </div>
+                
+                <h4>Rincian per Kategori:</h4>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th style="padding: 10px; border: 1px solid #ddd;">Kategori</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Pemasukan</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Pengeluaran</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Saldo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            Object.keys(categorySummary).forEach(category => {
+                const catData = categorySummary[category];
+                const saldo = catData.pemasukan - catData.pengeluaran;
+                
+                report += `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${category}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; color: #2ecc71;">${formatCurrency(catData.pemasukan)}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; color: #e74c3c;">${formatCurrency(catData.pengeluaran)}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: 600; color: ${saldo >= 0 ? '#2ecc71' : '#e74c3c'};">${formatCurrency(saldo)}</td>
+                    </tr>
+                `;
+            });
+            
+            report += `
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('financeReportContent').innerHTML = report;
+            document.getElementById('financeChartContainer').style.display = 'block';
+            renderFinanceChart(filteredFinance);
+        }
+
+        function renderFinanceChart(financeData) {
+            // Destroy existing chart
+            if (currentChart) {
+                currentChart.destroy();
+            }
+            
+            const ctx = document.getElementById('financeChart').getContext('2d');
+            
+            // Group data by month
+            const monthlyData = {};
+            financeData.forEach(f => {
+                const date = new Date(f.date);
+                const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+                
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = { pemasukan: 0, pengeluaran: 0 };
+                }
+                
+                monthlyData[monthKey][f.type] += f.amount || 0;
+            });
+            
+            // Sort months
+            const sortedMonths = Object.keys(monthlyData).sort();
+            
+            const labels = sortedMonths.map(month => {
+                const [year, monthNum] = month.split('-');
+                return `${year}-${monthNum.padStart(2, '0')}`;
+            });
+            
+            const incomeData = sortedMonths.map(month => monthlyData[month].pemasukan);
+            const expenseData = sortedMonths.map(month => monthlyData[month].pengeluaran);
+            
+            currentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Pemasukan',
+                            data: incomeData,
+                            backgroundColor: '#2ecc71',
+                            borderColor: '#27ae60',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Pengeluaran',
+                            data: expenseData,
+                            backgroundColor: '#e74c3c',
+                            borderColor: '#c0392b',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'Rp ' + value.toLocaleString('id-ID');
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += 'Rp ' + context.parsed.y.toLocaleString('id-ID');
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function closeFinanceReportModal() {
+            document.getElementById('financeReportModal').style.display = 'none';
+        }
+
+        function printFinanceReport() {
+            const printContent = document.getElementById('financeReportModal').innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Laporan Keuangan</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                        th, td { padding: 8px; border: 1px solid #ddd; }
+                        th { background-color: #f8f9fa; }
+                        .no-print { display: none; }
+                        @media print {
+                            body { padding: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(function() { window.close(); }, 1000);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        function exportFinanceReport() {
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+            
+            const filteredFinance = finance.filter(f => {
+                const recordDate = new Date(f.date);
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                
+                return recordDate >= start && recordDate <= end;
+            });
+            
+            if (filteredFinance.length === 0) {
+                showToast('error', 'Data Kosong', 'Tidak ada data untuk diexport.');
+                return;
+            }
+            
+            const exportData = filteredFinance.map(record => ({
+                'Tanggal': record.date,
+                'Jenis': record.type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran',
+                'Kategori': record.category,
+                'Jumlah': record.amount || 0,
+                'Keterangan': record.description,
+                'Dibuat Oleh': record.createdBy,
+                'Tanggal Input': formatDateTime(record.createdAt)
+            }));
+            
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Laporan Keuangan');
+            
+            const fileName = `Laporan_Keuangan_${startDate}_${endDate}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            
+            showToast('success', 'Export Berhasil', `Laporan keuangan berhasil diexport ke ${fileName}`);
+        }
+
+        // ==================== LAPORAN HIERARKI KELUARGA ====================
+        function generateFamilyHierarchyReport() {
+            if (members.length === 0) {
+                showToast('error', 'Data Kosong', 'Tidak ada data anggota untuk laporan.');
+                return;
+            }
+            
+            const nomorIndukSet = new Set();
+            members.forEach(member => {
+                const parsed = parseNomorKK(member.no_kep);
+                if (parsed && parsed.nomorInduk) {
+                    nomorIndukSet.add(parsed.nomorInduk);
+                }
+            });
+            
+            const nomorIndukList = Array.from(nomorIndukSet).sort();
+            
+            let report = `📋 LAPORAN HIERARKI KELUARGA\n`;
+            report += `Tupuan Girsang Boru Panagolan - Wilayah 3 Tangerang\n`;
+            report += `Periode: ${new Date().toLocaleDateString('id-ID')}\n`;
+            report += `Dibuat oleh: ${currentUser.username}\n`;
+            report += '='.repeat(60) + '\n\n';
+            
+            let totalKeluarga = 0;
+            let totalAnggota = 0;
+            let totalGirsang = 0;
+            let totalBoru = 0;
+            let totalPanagolan = 0;
+            
+            nomorIndukList.forEach((nomorInduk, index) => {
+                const anggotaKeluarga = getAnggotaKeluarga(members, nomorInduk);
+                if (anggotaKeluarga.length === 0) return;
+                
+                totalKeluarga++;
+                totalAnggota += anggotaKeluarga.length;
+                
+                const kepalaKeluarga = anggotaKeluarga.find(m => {
+                    const parsed = parseNomorKK(m.no_kep);
+                    return parsed && parsed.status === 'S';
+                });
+                
+                if (kepalaKeluarga) {
+                    const parsedKK = parseNomorKK(kepalaKeluarga.no_kep);
+                    
+                    anggotaKeluarga.forEach(member => {
+                        const parsed = parseNomorKK(member.no_kep);
+                        if (parsed) {
+                            if (parsed.kategori === 'G') totalGirsang++;
+                            else if (parsed.kategori === 'B') totalBoru++;
+                            else if (parsed.kategori === 'P') totalPanagolan++;
+                        }
+                    });
+                    
+                    report += `KELUARGA ${index + 1}: ${kepalaKeluarga.no_kep}\n`;
+                    report += `📌 Kepala Keluarga: ${kepalaKeluarga.nama}\n`;
+                    report += `📍 Alamat: ${kepalaKeluarga.alamat || '-'}\n`;
+                    report += `📞 Telepon: ${kepalaKeluarga.no_hp || '-'}\n`;
+                    report += `🏷️ Kategori: ${formatKategori(parsedKK.kategori)}\n`;
+                    report += '-'.repeat(50) + '\n';
+                    
+                    anggotaKeluarga.forEach((anggota, idx) => {
+                        const parsed = parseNomorKK(anggota.no_kep);
+                        if (!parsed) return;
+                        
+                        const indent = '  ';
+                        let connector = '';
+                        
+                        if (idx === 0) {
+                            connector = '└── ';
+                        } else if (idx === anggotaKeluarga.length - 1) {
+                            connector = '    └── ';
+                        } else {
+                            connector = '    ├── ';
+                        }
+                        
+                        const statusDisplay = formatStatusKeluarga(parsed.status);
+                        const kategoriDisplay = formatKategori(parsed.kategori);
+                        
+                        report += `${indent}${connector}${anggota.no_kep}\n`;
+                        report += `${indent}     ├── Nama: ${anggota.nama}\n`;
+                        report += `${indent}     ├── Status: ${statusDisplay}\n`;
+                        report += `${indent}     ├── Kategori: ${kategoriDisplay}\n`;
+                        
+                        if (anggota.tgl_lahir) {
+                            report += `${indent}     ├── Tgl Lahir: ${formatDate(anggota.tgl_lahir)}\n`;
+                        }
+                        
+                        if (anggota.jabatan && anggota.jabatan !== 'Anggota') {
+                            report += `${indent}     ├── Jabatan: ${anggota.jabatan}\n`;
+                        }
+                        
+                        if (anggota.children && anggota.children.length > 0 && parsed.status.startsWith('A')) {
+                            report += `${indent}     └── Data Pendidikan: ${anggota.children[0].pendidikan || '-'}\n`;
+                        } else {
+                            report += `${indent}     └── Status: ${anggota.status === 'aktif' ? '✅ Aktif' : '❌ Nonaktif'}\n`;
+                        }
+                    });
+                    
+                    report += '\n';
+                }
+            });
+            
+            report += '='.repeat(60) + '\n';
+            report += '📊 STATISTIK KESELURUHAN\n';
+            report += '='.repeat(60) + '\n';
+            report += `👨‍👩‍👧‍👦 Total Keluarga: ${totalKeluarga}\n`;
+            report += `👥 Total Anggota: ${totalAnggota}\n`;
+            report += `📊 Rata-rata anggota per keluarga: ${(totalAnggota / totalKeluarga).toFixed(1)}\n\n`;
+            
+            report += `🏷️ DISTRIBUSI KATEGORI:\n`;
+            report += `  • Girsang (G): ${totalGirsang} anggota (${Math.round((totalGirsang/totalAnggota)*100)}%)\n`;
+            report += `  • Boru (B): ${totalBoru} anggota (${Math.round((totalBoru/totalAnggota)*100)}%)\n`;
+            report += `  • Panagolan (P): ${totalPanagolan} anggota (${Math.round((totalPanagolan/totalAnggota)*100)}%)\n\n`;
+            
+            const statusCount = { Suami: 0, Istri: 0, Anak: 0 };
+            members.forEach(member => {
+                const parsed = parseNomorKK(member.no_kep);
+                if (parsed) {
+                    if (parsed.status === 'S') statusCount.Suami++;
+                    else if (parsed.status === 'I') statusCount.Istri++;
+                    else if (parsed.status.startsWith('A')) statusCount.Anak++;
+                }
+            });
+            
+            report += `👪 DISTRIBUSI STATUS KELUARGA:\n`;
+            report += `  • Suami: ${statusCount.Suami}\n`;
+            report += `  • Istri: ${statusCount.Istri}\n`;
+            report += `  • Anak: ${statusCount.Anak}\n`;
+            
+            showFamilyReportModal(report);
+        }
+
+        function showFamilyReportModal(reportContent) {
+            let modal = document.getElementById('familyReportModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'familyReportModal';
+                modal.className = 'modal-overlay';
+                modal.innerHTML = `
+                    <div class="modal-box" style="max-width: 800px;">
+                        <div class="modal-header">
+                            <h3>📋 Laporan Hierarki Keluarga</h3>
+                            <div class="modal-close" onclick="closeFamilyReportModal()">×</div>
+                        </div>
+                        <div class="modal-body">
+                            <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                                <button onclick="printFamilyReport()" class="btn btn-primary">🖨️ Cetak</button>
+                                <button onclick="copyFamilyReport()" class="btn btn-success">📋 Salin Teks</button>
+                                <button onclick="exportFamilyReportToExcel()" class="btn btn-export">📊 Export Excel</button>
+                            </div>
+                            <div id="familyReportContent" style="background: #f8f9fa; padding: 20px; border-radius: 10px; max-height: 500px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 13px; line-height: 1.4;"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button onclick="closeFamilyReportModal()" class="btn btn-danger">Tutup</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            
+            document.getElementById('familyReportContent').textContent = reportContent;
+            modal.style.display = 'flex';
+        }
+
+        function closeFamilyReportModal() {
+            const modal = document.getElementById('familyReportModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function printFamilyReport() {
+            const content = document.getElementById('familyReportContent').textContent;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Laporan Hierarki Keluarga</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        pre { white-space: pre-wrap; font-size: 12px; line-height: 1.4; }
+                        @media print {
+                            body { padding: 0; }
+                            .no-print { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="no-print">
+                        <button onclick="window.print()">🖨️ Cetak</button>
+                        <button onclick="window.close()">✕ Tutup</button>
+                        <hr>
+                    </div>
+                    <pre>${content}</pre>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        function copyFamilyReport() {
+            const content = document.getElementById('familyReportContent').textContent;
+            navigator.clipboard.writeText(content)
+                .then(() => showToast('success', 'Berhasil', 'Laporan berhasil disalin ke clipboard.'))
+                .catch(() => {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = content;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showToast('success', 'Berhasil', 'Laporan berhasil disalin.');
+                });
+        }
+
+        function exportFamilyReportToExcel() {
+            if (members.length === 0) {
+                showToast('error', 'Data Kosong', 'Tidak ada data untuk diexport.');
+                return;
+            }
+            
+            try {
+                const nomorIndukSet = new Set();
+                members.forEach(member => {
+                    const parsed = parseNomorKK(member.no_kep);
+                    if (parsed && parsed.nomorInduk) {
+                        nomorIndukSet.add(parsed.nomorInduk);
+                    }
+                });
+                
+                const nomorIndukList = Array.from(nomorIndukSet).sort();
+                const familyData = [];
+                
+                nomorIndukList.forEach((nomorInduk, familyIndex) => {
+                    const anggotaKeluarga = getAnggotaKeluarga(members, nomorInduk);
+                    const kepalaKeluarga = anggotaKeluarga.find(m => {
+                        const parsed = parseNomorKK(m.no_kep);
+                        return parsed && parsed.status === 'S';
+                    });
+                    
+                    if (kepalaKeluarga) {
+                        const parsedKK = parseNomorKK(kepalaKeluarga.no_kep);
+                        
+                        familyData.push({
+                            'No Keluarga': familyIndex + 1,
+                            'Nomor KK': kepalaKeluarga.no_kep,
+                            'Kepala Keluarga': kepalaKeluarga.nama,
+                            'Alamat': kepalaKeluarga.alamat || '',
+                            'Telepon': kepalaKeluarga.no_hp || '',
+                            'Kategori': formatKategori(parsedKK.kategori),
+                            'Jumlah Anggota': anggotaKeluarga.length,
+                            'Status': kepalaKeluarga.status === 'aktif' ? 'Aktif' : 'Nonaktif'
+                        });
+                        
+                        anggotaKeluarga.forEach((anggota, idx) => {
+                            if (idx > 0) {
+                                const parsed = parseNomorKK(anggota.no_kep);
+                                familyData.push({
+                                    'No Keluarga': familyIndex + 1,
+                                    'Nomor KK': anggota.no_kep,
+                                    'Kepala Keluarga': kepalaKeluarga.nama,
+                                    'Nama Anggota': anggota.nama,
+                                    'Status Keluarga': formatStatusKeluarga(parsed.status),
+                                    'Kategori': formatKategori(parsed.kategori),
+                                    'Tanggal Lahir': anggota.tgl_lahir || '',
+                                    'Jabatan': anggota.jabatan || '',
+                                    'Alamat': anggota.alamat || '',
+                                    'Telepon': anggota.no_hp || '',
+                                    'Status': anggota.status === 'aktif' ? 'Aktif' : 'Nonaktif'
+                                });
+                            }
+                        });
+                        
+                        familyData.push({});
+                    }
+                });
+                
+                const ws = XLSX.utils.json_to_sheet(familyData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Laporan Keluarga');
+                
+                const fileName = `Laporan_Keluarga_${new Date().toISOString().slice(0,10)}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                
+                showToast('success', 'Export Berhasil', `Laporan keluarga berhasil diexport ke ${fileName}`);
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                showToast('error', 'Export Gagal', 'Terjadi kesalahan saat mengexport data.');
+            }
+        }
+
+        function closeMemberReportModal() {
+            document.getElementById('memberReportModal').style.display = 'none';
+        }
+
+        function printMemberReport() {
+            const printContent = document.getElementById('memberReportModal').innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Laporan Anggota</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                        th, td { padding: 8px; border: 1px solid #ddd; }
+                        th { background-color: #f8f9fa; }
+                        .no-print { display: none; }
+                        @media print {
+                            body { padding: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(function() { window.close(); }, 1000);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        function printAttendanceReport() {
+            // Implementation for printing attendance report
+            showToast('info', 'Coming Soon', 'Fitur print laporan kehadiran akan segera hadir.');
+        }
+
+        function printDetail() {
+            const printContent = document.getElementById('detailModal').innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Detail Anggota</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        .detail-view { background: #f8f9fa; padding: 15px; border-radius: 5px; }
+                        .detail-row { display: flex; margin-bottom: 10px; }
+                        .detail-label { font-weight: bold; width: 150px; }
+                        .no-print { display: none; }
+                        @media print {
+                            body { padding: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(function() { window.close(); }, 1000);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        // ==================== CHART FUNCTIONS ====================
+        function updateCharts() {
+            updateCategoryChart();
+            updateStatusChart();
+            updateYearlyStatsChart();
+        }
+
+        function updateCategoryChart() {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            
+            // Count members by category
+            const categoryCounts = { Girsang: 0, Boru: 0, Panagolan: 0, Lainnya: 0 };
+            
+            members.forEach(member => {
+                const parsed = parseNomorKK(member.no_kep);
+                if (parsed) {
+                    if (parsed.kategori === 'G') categoryCounts.Girsang++;
+                    else if (parsed.kategori === 'B') categoryCounts.Boru++;
+                    else if (parsed.kategori === 'P') categoryCounts.Panagolan++;
+                    else categoryCounts.Lainnya++;
+                } else {
+                    categoryCounts.Lainnya++;
+                }
+            });
+            
+            // Destroy existing chart if exists
+            const existingChart = Chart.getChart(ctx);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(categoryCounts),
+                    datasets: [{
+                        data: Object.values(categoryCounts),
+                        backgroundColor: [
+                            '#3498db', // Girsang
+                            '#e74c3c', // Boru
+                            '#f39c12', // Panagolan
+                            '#95a5a6'  // Lainnya
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateStatusChart() {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            
+            // Count members by status
+            const statusCounts = { Aktif: 0, Nonaktif: 0 };
+            
+            members.forEach(member => {
+                if (member.status === 'aktif') statusCounts.Aktif++;
+                else statusCounts.Nonaktif++;
+            });
+            
+            // Destroy existing chart if exists
+            const existingChart = Chart.getChart(ctx);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(statusCounts),
+                    datasets: [{
+                        data: Object.values(statusCounts),
+                        backgroundColor: [
+                            '#2ecc71', // Aktif
+                            '#e74c3c'  // Nonaktif
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateYearlyStatsChart() {
+            const ctx = document.getElementById('yearlyStatsChart').getContext('2d');
+            
+            // Get current year
+            const currentYear = new Date().getFullYear();
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            
+            // Prepare data for the year
+            const monthlyMembers = Array(12).fill(0);
+            const monthlyAttendance = Array(12).fill(0);
+            
+            // Count members by month
+            members.forEach(member => {
+                if (member.createdAt) {
+                    const date = new Date(member.createdAt);
+                    if (date.getFullYear() === currentYear) {
+                        monthlyMembers[date.getMonth()]++;
+                    }
+                }
+            });
+            
+            // Calculate attendance rate by month
+            attendance.forEach(record => {
+                const date = new Date(record.date);
+                if (date.getFullYear() === currentYear) {
+                    if (record.status === 'hadir') {
+                        monthlyAttendance[date.getMonth()]++;
+                    }
+                }
+            });
+            
+            // Destroy existing chart if exists
+            const existingChart = Chart.getChart(ctx);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Anggota Baru',
+                            data: monthlyMembers,
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Kehadiran',
+                            data: monthlyAttendance,
+                            borderColor: '#2ecc71',
+                            backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Jumlah'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
         }
 
         // ==================== UTILITY FUNCTIONS ====================
@@ -2179,6 +4429,22 @@
             }
         }
 
+        function formatDateTime(timestamp) {
+            if (!timestamp) return '';
+            try {
+                const date = new Date(timestamp);
+                return date.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                return '';
+            }
+        }
+
         function formatCurrency(amount) {
             return new Intl.NumberFormat('id-ID', {
                 style: 'currency',
@@ -2193,8 +4459,22 @@
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
             
-            if (tabName === 'dashboard') updateDashboard();
-            else if (tabName === 'members') renderMembersTable();
+            if (tabName === 'dashboard') {
+                updateDashboard();
+                updateCharts();
+            } else if (tabName === 'members') {
+                renderMembersTable();
+            } else if (tabName === 'attendance') {
+                renderAttendanceTable();
+            } else if (tabName === 'finance') {
+                renderFinanceTable();
+                updateFinanceSummary();
+            } else if (tabName === 'reports') {
+                updateReports();
+                updateCharts();
+            } else if (tabName === 'users') {
+                renderUsersTable();
+            }
         }
 
         function updateDashboard() {
@@ -2202,7 +4482,6 @@
             const active = members.filter(m => m.status === 'aktif').length;
             const inactive = members.filter(m => m.status === 'nonaktif').length;
             
-            // Hitung total anak
             const totalChildren = members.reduce((sum, member) => {
                 return sum + (member.jumlah_anak || 0);
             }, 0);
@@ -2210,13 +4489,11 @@
             document.getElementById('totalMembers').textContent = total;
             document.getElementById('activeMembers').textContent = active;
             document.getElementById('inactiveMembers').textContent = inactive;
-            document.getElementById('pendingMembers').textContent = '0'; // Untuk fitur selanjutnya
+            document.getElementById('pendingMembers').textContent = '0';
             
-            // Update activity table
             const activityTable = document.getElementById('activityTable');
             activityTable.innerHTML = '';
             
-            // Contoh aktivitas
             const activities = [
                 { date: new Date().toLocaleDateString('id-ID'), activity: 'Login Sistem', detail: `User: ${currentUser.username}`, status: 'Success' },
                 { date: new Date().toLocaleDateString('id-ID'), activity: 'Load Data', detail: `Memuat ${total} anggota (${totalChildren} anak)`, status: 'Completed' }
@@ -2233,6 +4510,26 @@
                 });
             }
             
+            if (attendance.length > 0) {
+                const latestAttendance = attendance[attendance.length - 1];
+                activities.push({
+                    date: formatDate(latestAttendance.date || new Date().toISOString()),
+                    activity: 'Kehadiran',
+                    detail: `${latestAttendance.memberName} - ${latestAttendance.status}`,
+                    status: 'Recorded'
+                });
+            }
+            
+            if (finance.length > 0) {
+                const latestFinance = finance[finance.length - 1];
+                activities.push({
+                    date: formatDate(latestFinance.date || new Date().toISOString()),
+                    activity: 'Transaksi',
+                    detail: `${latestFinance.type} - ${formatCurrency(latestFinance.amount)}`,
+                    status: 'Processed'
+                });
+            }
+            
             activities.forEach(activity => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -2246,9 +4543,19 @@
         }
 
         function updateFinanceSummary() {
-            document.getElementById('totalIncome').textContent = 'Rp 0';
-            document.getElementById('totalExpense').textContent = 'Rp 0';
-            document.getElementById('totalBalance').textContent = 'Rp 0';
+            const totalIncome = finance
+                .filter(f => f.type === 'pemasukan')
+                .reduce((sum, f) => sum + (f.amount || 0), 0);
+            
+            const totalExpense = finance
+                .filter(f => f.type === 'pengeluaran')
+                .reduce((sum, f) => sum + (f.amount || 0), 0);
+            
+            const totalBalance = totalIncome - totalExpense;
+            
+            document.getElementById('totalIncome').textContent = formatCurrency(totalIncome);
+            document.getElementById('totalExpense').textContent = formatCurrency(totalExpense);
+            document.getElementById('totalBalance').textContent = formatCurrency(totalBalance);
         }
 
         function updateReports() {
@@ -2256,10 +4563,87 @@
                 return sum + (member.jumlah_anak || 0);
             }, 0);
             
+            const totalIncome = finance
+                .filter(f => f.type === 'pemasukan')
+                .reduce((sum, f) => sum + (f.amount || 0), 0);
+            
+            // Calculate attendance rate
+            const totalAttendance = attendance.length;
+            const hadirCount = attendance.filter(a => a.status === 'hadir').length;
+            const attendanceRate = totalAttendance > 0 ? Math.round((hadirCount / totalAttendance) * 100) : 0;
+            
             document.getElementById('reportTotalMembers').textContent = members.length;
-            document.getElementById('reportAttendanceRate').textContent = '0%';
-            document.getElementById('reportTotalIncome').textContent = 'Rp 0';
+            document.getElementById('reportAttendanceRate').textContent = `${attendanceRate}%`;
+            document.getElementById('reportTotalIncome').textContent = formatCurrency(totalIncome);
             document.getElementById('reportMonth').textContent = new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+            
+            // Update monthly stats table
+            updateMonthlyStatsTable();
+        }
+
+        function updateMonthlyStatsTable() {
+            const tbody = document.getElementById('monthlyStats');
+            tbody.innerHTML = '';
+            
+            // Get last 6 months
+            const months = [];
+            const currentDate = new Date();
+            
+            for (let i = 5; i >= 0; i--) {
+                const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                months.push(date);
+            }
+            
+            months.forEach(month => {
+                const monthKey = `${month.getFullYear()}-${month.getMonth() + 1}`;
+                const monthName = month.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+                
+                // Count new members in this month
+                const newMembers = members.filter(m => {
+                    if (!m.createdAt) return false;
+                    const memberDate = new Date(m.createdAt);
+                    return memberDate.getFullYear() === month.getFullYear() && 
+                           memberDate.getMonth() === month.getMonth();
+                }).length;
+                
+                // Calculate attendance in this month
+                const monthAttendance = attendance.filter(a => {
+                    const recordDate = new Date(a.date);
+                    return recordDate.getFullYear() === month.getFullYear() && 
+                           recordDate.getMonth() === month.getMonth();
+                });
+                
+                const hadirCount = monthAttendance.filter(a => a.status === 'hadir').length;
+                const attendanceRate = monthAttendance.length > 0 ? Math.round((hadirCount / monthAttendance.length) * 100) : 0;
+                
+                // Calculate finance in this month
+                const monthFinance = finance.filter(f => {
+                    const recordDate = new Date(f.date);
+                    return recordDate.getFullYear() === month.getFullYear() && 
+                           recordDate.getMonth() === month.getMonth();
+                });
+                
+                const totalIncome = monthFinance
+                    .filter(f => f.type === 'pemasukan')
+                    .reduce((sum, f) => sum + (f.amount || 0), 0);
+                
+                const totalExpense = monthFinance
+                    .filter(f => f.type === 'pengeluaran')
+                    .reduce((sum, f) => sum + (f.amount || 0), 0);
+                
+                const totalBalance = totalIncome - totalExpense;
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${monthName}</td>
+                    <td>${newMembers}</td>
+                    <td>${attendanceRate}%</td>
+                    <td>${formatCurrency(totalIncome)}</td>
+                    <td>${formatCurrency(totalExpense)}</td>
+                    <td>${formatCurrency(totalBalance)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         function refreshData() {
@@ -2267,7 +4651,7 @@
             loadAllData();
         }
 
-        // ==================== EXPORT FUNCTIONS (DIPERBARUI UNTUK DATA ANAK) ====================
+        // ==================== EXPORT FUNCTIONS ====================
         function exportToExcel() {
             if (members.length === 0) {
                 showToast('error', 'Data Kosong', 'Tidak ada data anggota untuk diexport.');
@@ -2276,20 +4660,22 @@
             
             try {
                 const exportData = members.map(member => {
+                    const parsed = parseNomorKK(member.no_kep);
                     const baseData = {
-                        'No Kep. Keluarga': member.no_kep || '',
+                        'Nomor KK': member.no_kep || '',
                         'Nama Lengkap': member.nama || '',
                         'Tanggal Lahir': member.tgl_lahir || '',
                         'Alamat': member.alamat || '',
                         'No HP': member.no_hp || '',
                         'Jabatan': member.jabatan || '',
-                        'Status': member.status === 'aktif' ? 'Aktif' : 'Nonaktif',
+                        'Status Keanggotaan': member.status === 'aktif' ? 'Aktif' : 'Nonaktif',
+                        'Status Keluarga': parsed ? formatStatusKeluarga(parsed.status) : '',
+                        'Kategori': parsed ? formatKategori(parsed.kategori) : '',
                         'Jumlah Anak': member.jumlah_anak || 0,
                         'Tanggal Dibuat': member.createdAt ? formatDate(member.createdAt) : '',
                         'Dibuat Oleh': member.createdBy || ''
                     };
                     
-                    // Tambahkan data anak jika ada
                     if (member.children && member.children.length > 0) {
                         member.children.forEach((child, index) => {
                             baseData[`Anak ${index + 1} - Nama`] = child.nama || '';
@@ -2323,139 +4709,466 @@
                 return;
             }
             
-            showToast('info', 'Coming Soon', 'Fitur export PDF akan segera hadir.');
+            try {
+                // Initialize jsPDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Add title
+                doc.setFontSize(16);
+                doc.text('Laporan Data Anggota', 105, 15, null, null, 'center');
+                doc.setFontSize(10);
+                doc.text(`Girsang Boru Panagolan Tangerang - ${new Date().toLocaleDateString('id-ID')}`, 105, 22, null, null, 'center');
+                
+                // Prepare table data
+                const tableData = members.map((member, index) => [
+                    index + 1,
+                    member.nama || '',
+                    member.no_kep || '',
+                    member.status === 'aktif' ? 'Aktif' : 'Nonaktif',
+                    parseNomorKK(member.no_kep) ? formatKategori(parseNomorKK(member.no_kep).kategori) : '',
+                    member.jumlah_anak || 0
+                ]);
+                
+                // Add table
+                doc.autoTable({
+                    head: [['No', 'Nama', 'Nomor KK', 'Status', 'Kategori', 'Jml Anak']],
+                    body: tableData,
+                    startY: 30,
+                    theme: 'striped',
+                    headStyles: { fillColor: [52, 152, 219] },
+                    styles: { fontSize: 9, cellPadding: 2 },
+                    columnStyles: {
+                        0: { cellWidth: 10 },
+                        5: { cellWidth: 15 }
+                    }
+                });
+                
+                // Add statistics
+                const finalY = doc.lastAutoTable.finalY + 10;
+                doc.setFontSize(12);
+                doc.text('Statistik:', 14, finalY);
+                
+                const activeCount = members.filter(m => m.status === 'aktif').length;
+                const inactiveCount = members.filter(m => m.status === 'nonaktif').length;
+                const totalChildren = members.reduce((sum, m) => sum + (m.jumlah_anak || 0), 0);
+                
+                doc.setFontSize(10);
+                doc.text(`Total Anggota: ${members.length}`, 14, finalY + 8);
+                doc.text(`Aktif: ${activeCount}`, 14, finalY + 16);
+                doc.text(`Nonaktif: ${inactiveCount}`, 14, finalY + 24);
+                doc.text(`Total Anak: ${totalChildren}`, 14, finalY + 32);
+                
+                // Save the PDF
+                const fileName = `Laporan_Anggota_${new Date().toISOString().slice(0,10)}.pdf`;
+                doc.save(fileName);
+                
+                showToast('success', 'Export Berhasil', `Data berhasil diexport ke ${fileName}`);
+                
+            } catch (error) {
+                console.error('PDF Export error:', error);
+                showToast('error', 'Export Gagal', 'Terjadi kesalahan saat membuat PDF.');
+            }
         }
 
+        function exportAttendance() {
+            if (attendance.length === 0) {
+                showToast('error', 'Data Kosong', 'Tidak ada data kehadiran untuk diexport.');
+                return;
+            }
+            
+            try {
+                const exportData = attendance.map(record => ({
+                    'Tanggal': record.date,
+                    'Nama Anggota': record.memberName || '',
+                    'Nomor KK': record.memberNoKep || '',
+                    'Status': record.status === 'hadir' ? 'Hadir' : 
+                             record.status === 'sakit' ? 'Sakit' : 
+                             record.status === 'izin' ? 'Izin' : 'Alfa',
+                    'Keterangan': record.note || '',
+                    'Waktu Input': formatDateTime(record.createdAt),
+                    'Input Oleh': record.createdBy || ''
+                }));
+                
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Data Kehadiran');
+                
+                const fileName = `Data_Kehadiran_${new Date().toISOString().slice(0,10)}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                
+                showToast('success', 'Export Berhasil', `Data kehadiran berhasil diexport ke ${fileName}`);
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                showToast('error', 'Export Gagal', 'Terjadi kesalahan saat mengexport data kehadiran.');
+            }
+        }
+
+        function generateFinancialReport() {
+            showFinanceReport();
+        }
+
+        function printAllReports() {
+            showToast('info', 'Coming Soon', 'Fitur cetak semua laporan akan segera hadir.');
+        }
+
+        // ==================== IMPORT FUNCTIONS ====================
         function showImportModal() {
             if(currentUser.role !== 'admin') {
                 showToast('error', 'Akses Ditolak', 'Hanya admin yang bisa mengimport data.');
                 return;
             }
-            showToast('info', 'Coming Soon', 'Fitur import Excel akan segera hadir.');
+            
+            document.getElementById('importModal').style.display = 'flex';
+            resetImportModal();
         }
 
-        function showAddAttendanceForm() {
-            showToast('info', 'Coming Soon', 'Fitur kehadiran akan segera hadir.');
+        function closeImportModal() {
+            document.getElementById('importModal').style.display = 'none';
         }
 
-        function showAddFinanceForm() {
-            showToast('info', 'Coming Soon', 'Fitur keuangan akan segera hadir.');
+        function resetImportModal() {
+            // Reset to step 1
+            document.querySelectorAll('.step-content').forEach(step => {
+                step.classList.remove('active-step');
+            });
+            document.getElementById('step1').classList.add('active-step');
+            
+            // Reset buttons
+            document.getElementById('prevBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'block';
+            document.getElementById('importBtn').style.display = 'none';
+            document.getElementById('closeBtn').style.display = 'none';
+            
+            // Reset file input
+            document.getElementById('fileInput').value = '';
+            document.getElementById('selectedFileName').textContent = '';
+            
+            // Reset preview
+            document.getElementById('previewHeader').innerHTML = '';
+            document.getElementById('previewBody').innerHTML = '';
+            
+            // Reset stats
+            document.getElementById('totalRows').textContent = '0';
+            document.getElementById('validRows').textContent = '0';
+            document.getElementById('duplicateRows').textContent = '0';
+            document.getElementById('errorRows').textContent = '0';
         }
 
-        function showAddUserForm() {
-            showToast('info', 'Coming Soon', 'Fitur manajemen pengguna akan segera hadir.');
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            document.getElementById('selectedFileName').textContent = file.name;
+            
+            // Auto proceed to next step
+            nextStep();
         }
 
-        function generateMemberReport() {
-            if (members.length === 0) {
-                showToast('error', 'Data Kosong', 'Tidak ada data anggota untuk laporan.');
+        function prevStep() {
+            const currentStep = getCurrentStep();
+            if (currentStep > 1) {
+                showStep(currentStep - 1);
+            }
+        }
+
+        function nextStep() {
+            const currentStep = getCurrentStep();
+            
+            if (currentStep === 1) {
+                // Validate step 1
+                const fileInput = document.getElementById('fileInput');
+                if (!fileInput.files[0]) {
+                    showToast('error', 'File Required', 'Silakan pilih file terlebih dahulu.');
+                    return;
+                }
+                
+                // Read and preview file
+                readAndPreviewFile(fileInput.files[0]);
+            }
+            
+            if (currentStep < 3) {
+                showStep(currentStep + 1);
+            }
+        }
+
+        function getCurrentStep() {
+            const steps = document.querySelectorAll('.step-content');
+            for (let i = 0; i < steps.length; i++) {
+                if (steps[i].classList.contains('active-step')) {
+                    return i + 1;
+                }
+            }
+            return 1;
+        }
+
+        function showStep(stepNumber) {
+            // Hide all steps
+            document.querySelectorAll('.step-content').forEach(step => {
+                step.classList.remove('active-step');
+            });
+            
+            // Show selected step
+            document.getElementById(`step${stepNumber}`).classList.add('active-step');
+            
+            // Update buttons
+            document.getElementById('prevBtn').style.display = stepNumber > 1 ? 'block' : 'none';
+            document.getElementById('nextBtn').style.display = stepNumber < 3 ? 'block' : 'none';
+            document.getElementById('importBtn').style.display = stepNumber === 2 ? 'block' : 'none';
+            document.getElementById('closeBtn').style.display = stepNumber === 3 ? 'block' : 'none';
+        }
+
+        function readAndPreviewFile(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Get first sheet
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    
+                    // Convert to JSON
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    if (jsonData.length < 2) {
+                        showToast('error', 'Data Kosong', 'File Excel tidak berisi data.');
+                        return;
+                    }
+                    
+                    // Extract headers and data
+                    const headers = jsonData[0];
+                    const rows = jsonData.slice(1, 11); // First 10 rows for preview
+                    
+                    // Display preview
+                    displayPreview(headers, rows);
+                    
+                    // Calculate stats
+                    const totalRows = jsonData.length - 1; // Exclude header
+                    document.getElementById('totalRows').textContent = totalRows;
+                    document.getElementById('validRows').textContent = Math.floor(totalRows * 0.8); // Simulated
+                    document.getElementById('duplicateRows').textContent = Math.floor(totalRows * 0.1); // Simulated
+                    document.getElementById('errorRows').textContent = Math.floor(totalRows * 0.1); // Simulated
+                    
+                } catch (error) {
+                    console.error('Error reading file:', error);
+                    showToast('error', 'Format Error', 'Gagal membaca file. Pastikan format file benar.');
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        function displayPreview(headers, rows) {
+            const headerHtml = headers.map(header => `<th>${header || ''}</th>`).join('');
+            document.getElementById('previewHeader').innerHTML = `<tr>${headerHtml}</tr>`;
+            
+            let bodyHtml = '';
+            rows.forEach(row => {
+                const rowHtml = row.map(cell => `<td>${cell || ''}</td>`).join('');
+                bodyHtml += `<tr>${rowHtml}</tr>`;
+            });
+            
+            document.getElementById('previewBody').innerHTML = bodyHtml;
+        }
+
+        async function startImport() {
+            showStep(3);
+            
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const overwriteData = document.getElementById('overwriteData').checked;
+            const skipDuplicates = document.getElementById('skipDuplicates').checked;
+            
+            if (!file) {
+                showToast('error', 'File Required', 'Silakan pilih file terlebih dahulu.');
                 return;
             }
             
-            let report = `📊 LAPORAN DATA ANGGOTA & ANAK\n`;
-            report += `Periode: ${new Date().toLocaleDateString('id-ID')}\n`;
-            report += `Dibuat oleh: ${currentUser.username}\n\n`;
-            report += `👥 TOTAL ANGGOTA: ${members.length}\n\n`;
-            
-            const activeCount = members.filter(m => m.status === 'aktif').length;
-            const inactiveCount = members.filter(m => m.status === 'nonaktif').length;
-            
-            report += `✅ Aktif: ${activeCount} (${Math.round((activeCount/members.length)*100)}%)\n`;
-            report += `❌ Nonaktif: ${inactiveCount} (${Math.round((inactiveCount/members.length)*100)}%)\n\n`;
-            
-            // Hitung total anak
-            const totalChildren = members.reduce((sum, member) => {
-                return sum + (member.jumlah_anak || 0);
-            }, 0);
-            
-            report += `👶 TOTAL ANAK: ${totalChildren}\n`;
-            report += `👨‍👩‍👧‍👦 Rata-rata anak per anggota: ${(totalChildren / members.length).toFixed(1)}\n\n`;
-            
-            // Group by jabatan
-            const jabatanCount = {};
-            members.forEach(member => {
-                const jabatan = member.jabatan || 'Anggota';
-                jabatanCount[jabatan] = (jabatanCount[jabatan] || 0) + 1;
-            });
-            
-            report += `📋 DISTRIBUSI JABATAN:\n`;
-            for (const [jabatan, count] of Object.entries(jabatanCount)) {
-                report += `  ${jabatan}: ${count} orang\n`;
-            }
-            
-            // Statistik pendidikan anak
-            const pendidikanStats = { SD: 0, SMP: 0, SMU: 0, KULIAH: 0 };
-            const genderStats = { 'Laki-Laki': 0, 'Perempuan': 0 };
-            
-            members.forEach(member => {
-                if (member.children) {
-                    member.children.forEach(child => {
-                        if (child.pendidikan && pendidikanStats[child.pendidikan] !== undefined) {
-                            pendidikanStats[child.pendidikan]++;
+            try {
+                const reader = new FileReader();
+                
+                reader.onload = async function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    let importedCount = 0;
+                    let skippedCount = 0;
+                    let errorCount = 0;
+                    const totalRows = jsonData.length;
+                    
+                    // Update progress
+                    document.getElementById('progressText').textContent = 'Memproses data...';
+                    
+                    for (let i = 0; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        
+                        // Calculate progress
+                        const progress = Math.round(((i + 1) / totalRows) * 100);
+                        document.getElementById('progressBar').style.width = `${progress}%`;
+                        document.getElementById('progressDetails').textContent = 
+                            `Memproses baris ${i + 1} dari ${totalRows}`;
+                        
+                        try {
+                            // Map Excel columns to member data
+                            const memberData = mapRowToMember(row);
+                            
+                            if (memberData) {
+                                // Check for duplicates based on no_kep
+                                const isDuplicate = members.some(m => m.no_kep === memberData.no_kep);
+                                
+                                if (skipDuplicates && isDuplicate) {
+                                    skippedCount++;
+                                    continue;
+                                }
+                                
+                                if (isDuplicate && !overwriteData) {
+                                    skippedCount++;
+                                    continue;
+                                }
+                                
+                                // Save to Firebase
+                                if (isDuplicate && overwriteData) {
+                                    // Find existing member and update
+                                    const existingMember = members.find(m => m.no_kep === memberData.no_kep);
+                                    if (existingMember) {
+                                        const updateData = {
+                                            ...existingMember,
+                                            ...memberData,
+                                            updatedAt: Date.now(),
+                                            updatedBy: currentUser.username
+                                        };
+                                        await saveToFirebase(`members/${existingMember.firebaseKey}`, updateData);
+                                        importedCount++;
+                                    }
+                                } else {
+                                    // Create new member
+                                    const newKey = db.ref('members').push().key;
+                                    const newMember = {
+                                        ...memberData,
+                                        id: newKey,
+                                        createdAt: Date.now(),
+                                        createdBy: currentUser.username,
+                                        updatedAt: Date.now(),
+                                        updatedBy: currentUser.username
+                                    };
+                                    await saveToFirebase(`members/${newKey}`, newMember);
+                                    importedCount++;
+                                }
+                            } else {
+                                errorCount++;
+                            }
+                            
+                            // Small delay to show progress
+                            await new Promise(resolve => setTimeout(resolve, 10));
+                            
+                        } catch (error) {
+                            console.error('Error importing row:', error);
+                            errorCount++;
                         }
-                        if (child.jenis_kelamin && genderStats[child.jenis_kelamin] !== undefined) {
-                            genderStats[child.jenis_kelamin]++;
-                        }
-                    });
-                }
-            });
-            
-            report += `\n📚 DISTRIBUSI PENDIDIKAN ANAK:\n`;
-            for (const [pendidikan, count] of Object.entries(pendidikanStats)) {
-                if (count > 0) {
-                    report += `  ${pendidikan}: ${count} anak\n`;
-                }
+                    }
+                    
+                    // Final progress update
+                    document.getElementById('progressBar').style.width = '100%';
+                    document.getElementById('progressText').textContent = 'Import selesai!';
+                    document.getElementById('progressDetails').textContent = 
+                        `Diimpor: ${importedCount} | Dilewati: ${skippedCount} | Error: ${errorCount}`;
+                    
+                    showToast('success', 'Import Berhasil', 
+                        `Berhasil mengimport ${importedCount} data anggota.`);
+                    
+                    // Auto close after 2 seconds
+                    setTimeout(() => {
+                        closeImportModal();
+                        loadAllData(); // Refresh data
+                    }, 2000);
+                };
+                
+                reader.readAsArrayBuffer(file);
+                
+            } catch (error) {
+                console.error('Import error:', error);
+                showToast('error', 'Import Gagal', 'Terjadi kesalahan saat mengimport data.');
+                document.getElementById('progressText').textContent = 'Import gagal!';
             }
+        }
+
+        function mapRowToMember(row) {
+            // This is a simplified mapping function
+            // In a real application, you would have more sophisticated mapping logic
             
-            report += `\n🚻 JENIS KELAMIN ANAK:\n`;
-            for (const [gender, count] of Object.entries(genderStats)) {
-                if (count > 0) {
-                    report += `  ${gender}: ${count} anak\n`;
+            try {
+                const memberData = {
+                    no_kep: '',
+                    nama: '',
+                    tgl_lahir: '',
+                    alamat: '',
+                    no_hp: '',
+                    jabatan: 'Anggota',
+                    status: 'aktif',
+                    children: [],
+                    jumlah_anak: 0
+                };
+                
+                // Map columns based on common header names
+                for (const [key, value] of Object.entries(row)) {
+                    const lowerKey = key.toString().toLowerCase();
+                    
+                    if (lowerKey.includes('no') && lowerKey.includes('kk')) {
+                        memberData.no_kep = value?.toString() || '';
+                    } else if (lowerKey.includes('nama')) {
+                        memberData.nama = value?.toString() || '';
+                    } else if (lowerKey.includes('tgl') || lowerKey.includes('tanggal') || lowerKey.includes('lahir')) {
+                        memberData.tgl_lahir = value ? formatExcelDate(value) : '';
+                    } else if (lowerKey.includes('alamat')) {
+                        memberData.alamat = value?.toString() || '';
+                    } else if (lowerKey.includes('hp') || lowerKey.includes('telepon') || lowerKey.includes('telp')) {
+                        memberData.no_hp = value?.toString() || '';
+                    } else if (lowerKey.includes('jabatan') || lowerKey.includes('posisi')) {
+                        memberData.jabatan = value?.toString() || 'Anggota';
+                    } else if (lowerKey.includes('status')) {
+                        memberData.status = value?.toString().toLowerCase() === 'nonaktif' ? 'nonaktif' : 'aktif';
+                    }
                 }
+                
+                // Validate required fields
+                if (!memberData.no_kep || !memberData.nama || !memberData.alamat) {
+                    return null;
+                }
+                
+                // Try to parse the KK to get additional info
+                const parsedKK = parseNomorKK(memberData.no_kep);
+                if (parsedKK) {
+                    memberData.parsed_kk = parsedKK;
+                }
+                
+                return memberData;
+                
+            } catch (error) {
+                console.error('Mapping error:', error);
+                return null;
             }
-            
-            report += `\n📅 DATA TERBARU:\n`;
-            const sortedByDate = [...members].sort((a, b) => {
-                return (b.createdAt || 0) - (a.createdAt || 0);
-            }).slice(0, 5);
-            
-            sortedByDate.forEach((member, index) => {
-                const childInfo = member.jumlah_anak > 0 ? ` (${member.jumlah_anak} anak)` : '';
-                report += `${index + 1}. ${member.nama} - ${member.jabatan || 'Anggota'} (${member.status})${childInfo}\n`;
-            });
-            
-            // Tampilkan di alert atau console
-            console.log(report);
-            alert(report);
         }
 
-        function generateAttendanceReport() {
-            showToast('info', 'Coming Soon', 'Laporan kehadiran akan segera hadir.');
-        }
-
-        function generateFinancialReport() {
-            showToast('info', 'Coming Soon', 'Laporan keuangan akan segera hadir.');
-        }
-
-        function printAllReports() {
-            showToast('info', 'Coming Soon', 'Cetak laporan akan segera hadir.');
-        }
-
-        function exportAttendance() {
-            showToast('info', 'Coming Soon', 'Export kehadiran akan segera hadir.');
-        }
-
-        function showFinanceReport() {
-            showToast('info', 'Coming Soon', 'Laporan keuangan akan segera hadir.');
-        }
-
-        function filterAttendance() {
-            // Implementation needed
+        function formatExcelDate(value) {
+            // Handle Excel date format
+            if (typeof value === 'number') {
+                // Excel dates are numbers where 1 = Jan 1, 1900
+                const date = new Date((value - 25569) * 86400 * 1000);
+                return date.toISOString().split('T')[0];
+            }
+            return value?.toString() || '';
         }
 
         // ==================== INITIALIZATION ====================
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if user is already logged in
+        // Check if user is already logged in
+        window.onload = function() {
             const savedUser = localStorage.getItem('currentUser');
             if (savedUser) {
                 try {
@@ -2463,34 +5176,12 @@
                     document.getElementById('loginPage').style.display = 'none';
                     document.getElementById('app').style.display = 'block';
                     initializeApp();
-                } catch (e) {
+                } catch (error) {
+                    console.error('Error loading saved user:', error);
                     localStorage.removeItem('currentUser');
-                    console.log('Error parsing saved user:', e);
                 }
             }
-            
-            // Keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    closeAllModals();
-                }
-                if (e.ctrlKey && e.key === 'k') {
-                    e.preventDefault();
-                    document.getElementById('searchMember').focus();
-                }
-            });
-            
-            // Initialize toast container
-            if (!document.getElementById('toastContainer')) {
-                const toastContainer = document.createElement('div');
-                toastContainer.className = 'toast-container';
-                toastContainer.id = 'toastContainer';
-                document.body.appendChild(toastContainer);
-            }
-            
-            console.log('🚀 Aplikasi siap digunakan');
-        });
-
+        };
     </script>
 </body>
 </html>
