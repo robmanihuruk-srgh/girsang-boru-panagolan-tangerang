@@ -2259,23 +2259,12 @@
                     finance = [];
                 }
                 
-                // Load users
-                const usersData = await readFromFirebase('users');
-                if (usersData) {
-                    users = usersData;
-                } else {
-                    // Initialize with default users
-                    users = Object.values(defaultUsers).map(user => ({
-                        ...user,
-                        firebaseKey: user.username,
-                        createdAt: user.createdAt || Date.now()
-                    }));
-                }
+                // Load users dengan fungsi terpisah
+                await loadUsersData();
                 
                 renderMembersTable();
                 renderAttendanceTable();
                 renderFinanceTable();
-                renderUsersTable();
                 updateDashboard();
                 updateReports();
                 updateCharts();
@@ -2354,6 +2343,26 @@
                     updateReports();
                     
                     console.log(`🔄 Update real-time: ${finance.length} transaksi`);
+                }
+            });
+            
+            // Users listener
+            db.ref('users').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const usersArray = [];
+                    for (const key in data) {
+                        if (data.hasOwnProperty(key)) {
+                            usersArray.push({
+                                firebaseKey: key,
+                                ...data[key]
+                            });
+                        }
+                    }
+                    users = usersArray;
+                    renderUsersTable();
+                    
+                    console.log(`🔄 Update real-time: ${users.length} pengguna`);
                 }
             });
             
@@ -3252,6 +3261,8 @@
 
         // ==================== USER FUNCTIONS ====================
         function showAddUserForm() {
+            console.log('👥 showAddUserForm() dipanggil');
+            
             if (currentUser.role !== 'admin') {
                 showToast('error', 'Akses Ditolak', 'Hanya admin yang bisa menambah pengguna.');
                 return;
@@ -3264,6 +3275,8 @@
         }
 
         function showEditUserForm(firebaseKey) {
+            console.log('✏️ showEditUserForm() dipanggil dengan key:', firebaseKey);
+            
             if (currentUser.role !== 'admin') {
                 showToast('error', 'Akses Ditolak', 'Hanya admin yang bisa mengedit pengguna.');
                 return;
@@ -3300,6 +3313,8 @@
         }
 
         async function saveUser() {
+            console.log('🔍 saveUser() dipanggil');
+            
             if (currentUser.role !== 'admin') {
                 showToast('error', 'Akses Ditolak', 'Hanya admin yang bisa menyimpan pengguna.');
                 return;
@@ -3309,9 +3324,27 @@
             const username = document.getElementById('userUsername').value.trim();
             const password = document.getElementById('userPassword').value;
             const fullName = document.getElementById('userFullName').value.trim();
-            const role = document.getElementById('userRole').value;
+            const roleSelect = document.getElementById('userRole');
+            
+            console.log('📋 Form values:', {
+                firebaseKey,
+                username,
+                password: password ? '***' : 'empty',
+                fullName,
+                roleSelect: roleSelect ? 'found' : 'not found'
+            });
+            
+            if (!roleSelect) {
+                console.error('❌ roleSelect element not found');
+                showToast('error', 'Form Error', 'Element role tidak ditemukan.');
+                return;
+            }
+            
+            const role = roleSelect.value;
+            console.log('👤 Role value:', role);
             
             if (!username || !fullName || !role) {
+                console.error('❌ Validation failed:', { username, fullName, role });
                 showToast('error', 'Validasi Gagal', 'Username, nama lengkap, dan role harus diisi.');
                 return;
             }
@@ -3361,6 +3394,7 @@
                 
                 userData.updatedAt = Date.now();
                 
+                console.log('💾 Updating user:', userData);
                 const success = await saveToFirebase(path, userData);
                 if (success) {
                     showToast('success', 'Berhasil', 'Data pengguna berhasil diperbarui.');
@@ -3375,6 +3409,7 @@
                 userData.createdBy = currentUser.username;
                 userData.updatedAt = Date.now();
                 
+                console.log('💾 Creating new user:', userData);
                 const success = await saveToFirebase(path, userData);
                 if (success) {
                     showToast('success', 'Berhasil', 'Pengguna baru berhasil ditambahkan.');
@@ -3442,6 +3477,47 @@
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        // Fungsi untuk memuat data users
+        async function loadUsersData() {
+            try {
+                console.log('📖 Loading users data from Firebase...');
+                const usersData = await readFromFirebase('users');
+                
+                if (usersData && usersData.length > 0) {
+                    users = usersData;
+                    console.log(`✅ Loaded ${users.length} users`);
+                } else {
+                    // Initialize with default users
+                    console.log('ℹ️ No users found, initializing with default users');
+                    users = Object.values(defaultUsers).map(user => ({
+                        ...user,
+                        firebaseKey: user.username,
+                        createdAt: user.createdAt || Date.now()
+                    }));
+                    
+                    // Save default users to Firebase
+                    for (const user of users) {
+                        await saveToFirebase(`users/${user.username}`, {
+                            username: user.username,
+                            password: user.password,
+                            fullName: user.fullName,
+                            role: user.role,
+                            createdAt: user.createdAt,
+                            createdBy: 'system'
+                        });
+                    }
+                }
+                
+                renderUsersTable();
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Error loading users data:', error);
+                showToast('error', 'Gagal Memuat', 'Gagal memuat data pengguna.');
+                return false;
+            }
         }
 
         // ==================== LAPORAN FUNCTIONS ====================
