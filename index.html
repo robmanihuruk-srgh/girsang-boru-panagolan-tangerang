@@ -1,11 +1,11 @@
-<!-- File: tambah_pengguna.html -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tambah Pengguna Baru - Girsang Boru Panagolan Tangerang</title>
+    <title>Girsang Boru Panagolan Tangerang - Management System</title>
     <style>
+        /* Reset dan Base Styles */
         * {
             margin: 0;
             padding: 0;
@@ -14,138 +14,144 @@
         }
         
         body {
-            background-color: #f5f5f5;
+            background-color: #f0f2f5;
             color: #333;
-            line-height: 1.6;
+            line-height: 1.5;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-        }
-        
-        .header {
-            background-color: #2c3e50;
-            color: white;
-            padding: 15px 0;
-            margin-bottom: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        .header h1 {
-            font-size: 24px;
-            text-align: center;
-            font-weight: 600;
-        }
-        
-        .header .subtitle {
-            text-align: center;
-            font-size: 16px;
-            opacity: 0.9;
-            margin-top: 5px;
-        }
-        
-        .dashboard-nav {
-            background-color: #34495e;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 20px;
-        }
-        
-        .nav-item {
-            color: #ecf0f1;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-        
-        .nav-item:hover {
-            background-color: #3d566e;
-        }
-        
-        .nav-item.active {
-            background-color: #3498db;
-            font-weight: 600;
-        }
-        
-        .content-wrapper {
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
-        }
-        
-        .sidebar {
-            flex: 1;
-            min-width: 250px;
             background-color: white;
             border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        
-        .main-content {
-            flex: 3;
-            min-width: 300px;
-            background-color: white;
-            border-radius: 8px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        
-        .section-title {
-            font-size: 20px;
-            color: #2c3e50;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #3498db;
-        }
-        
-        .user-list {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-top: 20px;
         }
         
-        .user-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            align-items: center;
+        /* Header Styles */
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+            margin-bottom: 30px;
         }
         
-        .user-item:last-child {
-            border-bottom: none;
-        }
-        
-        .user-item:hover {
-            background-color: #f9f9f9;
-        }
-        
-        .user-info h4 {
+        .header h1 {
             color: #2c3e50;
+            font-size: 28px;
             margin-bottom: 5px;
         }
         
-        .user-role {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 12px;
+        .header h2 {
+            color: #3498db;
+            font-size: 20px;
+            font-weight: normal;
+        }
+        
+        /* Dashboard Navigation */
+        .dashboard-nav {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .dashboard-title {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .dashboard-title:before {
+            content: "▸";
+            margin-right: 10px;
+            color: #3498db;
+        }
+        
+        .dashboard-items {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .dashboard-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #555;
+        }
+        
+        .dashboard-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        
+        /* User Management Section */
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            color: #2c3e50;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        /* User Table */
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        
+        .user-table th {
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+            color: #2c3e50;
             font-weight: 600;
         }
         
+        .user-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .user-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
         .role-admin {
-            background-color: #e8f4fc;
-            color: #2980b9;
+            background-color: #e3f2fd;
+            color: #1565c0;
         }
         
         .role-user {
-            background-color: #e8f6ef;
-            color: #27ae60;
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        /* Form Styles */
+        .form-container {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #eaeaea;
         }
         
         .form-group {
@@ -164,113 +170,116 @@
             color: #e74c3c;
         }
         
-        .form-control {
+        .form-input {
             width: 100%;
-            padding: 12px 15px;
+            padding: 10px 15px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 16px;
             transition: border-color 0.3s;
         }
         
-        .form-control:focus {
+        .form-input:focus {
             outline: none;
             border-color: #3498db;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
         
         .form-select {
             width: 100%;
-            padding: 12px 15px;
+            padding: 10px 15px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 16px;
             background-color: white;
-            appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
             background-position: right 15px center;
             background-size: 16px;
+            appearance: none;
         }
         
-        .form-select:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-        }
-        
+        /* Error Message */
         .error-message {
             background-color: #fde8e8;
             color: #c53030;
             padding: 15px;
-            border-radius: 4px;
+            border-radius: 6px;
             margin-bottom: 20px;
             border-left: 4px solid #e53e3e;
-            display: none;
+            display: flex;
+            align-items: center;
         }
         
-        .error-message.show {
-            display: block;
+        .error-message:before {
+            content: "⚠";
+            margin-right: 10px;
+            font-size: 18px;
         }
         
         .error-list {
+            margin-left: 25px;
             margin-top: 10px;
-            padding-left: 20px;
         }
         
         .error-list li {
             margin-bottom: 5px;
         }
         
+        /* Button Styles */
         .button-group {
             display: flex;
             gap: 15px;
             margin-top: 30px;
+            flex-wrap: wrap;
         }
         
         .btn {
-            padding: 12px 24px;
+            padding: 10px 20px;
             border: none;
             border-radius: 4px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.3s;
+            min-width: 100px;
+            text-align: center;
         }
         
-        .btn-primary {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: #2980b9;
-        }
-        
-        .btn-secondary {
-            background-color: #95a5a6;
-            color: white;
-        }
-        
-        .btn-secondary:hover {
-            background-color: #7f8c8d;
-        }
-        
-        .btn-success {
+        .btn-simpan {
             background-color: #27ae60;
             color: white;
         }
         
-        .btn-success:hover {
+        .btn-simpan:hover {
             background-color: #219653;
         }
         
+        .btn-batal {
+            background-color: #95a5a6;
+            color: white;
+        }
+        
+        .btn-batal:hover {
+            background-color: #7f8c8d;
+        }
+        
+        .btn-reset {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-reset:hover {
+            background-color: #2980b9;
+        }
+        
+        /* Status Indicators */
         .status-indicator {
             display: inline-block;
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            margin-right: 8px;
+            margin-right: 5px;
         }
         
         .status-active {
@@ -281,8 +290,14 @@
             background-color: #e74c3c;
         }
         
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .content-wrapper {
+            .container {
+                padding: 15px;
+                margin-top: 10px;
+            }
+            
+            .dashboard-items {
                 flex-direction: column;
             }
             
@@ -293,74 +308,188 @@
             .btn {
                 width: 100%;
             }
+            
+            .user-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+        
+        /* Miscellaneous */
+        .note {
+            font-style: italic;
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .separator {
+            height: 1px;
+            background-color: #eaeaea;
+            margin: 30px 0;
+        }
+        
+        .aksi-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .aksi-btn {
+            padding: 5px 10px;
+            font-size: 14px;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+            background-color: white;
+            cursor: pointer;
+        }
+        
+        .aksi-btn:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* Password Field Styles */
+        .password-container {
+            position: relative;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* Loading State */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        /* Success Message */
+        .success-message {
+            background-color: #e8f6ef;
+            color: #27ae60;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #27ae60;
+            display: none;
+        }
+        
+        .success-message:before {
+            content: "✓";
+            margin-right: 10px;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Header -->
         <div class="header">
             <h1>Girsang Boru Panagolan Tangerang</h1>
-            <div class="subtitle">Management System</div>
+            <h2>Management System</h2>
         </div>
         
+        <!-- Dashboard Navigation -->
         <div class="dashboard-nav">
-            <a href="#" class="nav-item">Dashboard</a>
-            <a href="#" class="nav-item active">Manajemen Pengguna</a>
-            <a href="#" class="nav-item">Laporan</a>
-            <a href="#" class="nav-item">Pengaturan</a>
+            <div class="dashboard-title">Dashboard</div>
+            <div class="dashboard-items">
+                <div class="dashboard-item">
+                    <input type="checkbox" id="anggota">
+                    <label for="anggota">Anggota</label>
+                </div>
+                <div class="dashboard-item">
+                    <input type="checkbox" id="kehadiran" checked>
+                    <label for="kehadiran">Kehadiran</label>
+                </div>
+            </div>
         </div>
         
-        <div class="content-wrapper">
-            <div class="sidebar">
-                <h3 class="section-title">Daftar Pengguna</h3>
-                <div class="user-list">
-                    <div class="user-item">
-                        <div class="user-info">
-                            <h4>Administrator</h4>
-                            <span class="user-role role-admin">Administrator</span>
-                        </div>
-                        <div class="user-status">
-                            <span class="status-indicator status-active"></span>
-                            Aktif
-                        </div>
-                    </div>
-                    <div class="user-item">
-                        <div class="user-info">
-                            <h4>user1</h4>
-                            <span class="user-role role-user">Pengguna Biasa</span>
-                        </div>
-                        <div class="user-status">
-                            <span class="status-indicator status-active"></span>
-                            Aktif
-                        </div>
+        <!-- User Management Section -->
+        <div class="section">
+            <h3 class="section-title">Manajemen Pengguna</h3>
+            
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Administrator</td>
+                        <td><span class="role-badge role-admin">Administrator</span></td>
+                        <td><span class="status-indicator status-active"></span>Aktif</td>
+                        <td class="aksi-buttons">
+                            <button class="aksi-btn" onclick="editUser('Administrator')">Edit</button>
+                            <button class="aksi-btn" onclick="deleteUser('Administrator')">Hapus</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>user1</td>
+                        <td><span class="role-badge role-user">Pengguna Biasa</span></td>
+                        <td><span class="status-indicator status-active"></span>Aktif</td>
+                        <td class="aksi-buttons">
+                            <button class="aksi-btn" onclick="editUser('user1')">Edit</button>
+                            <button class="aksi-btn" onclick="deleteUser('user1')">Hapus</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Add New User Section -->
+        <div class="section">
+            <h3 class="section-title">Tambah Pengguna Baru</h3>
+            
+            <!-- Success Message (Initially Hidden) -->
+            <div id="successMessage" class="success-message">
+                Pengguna berhasil ditambahkan!
+            </div>
+            
+            <!-- Error Message (Initially Hidden) -->
+            <div id="errorMessage" class="error-message" style="display: none;">
+                <div>
+                    <strong>Validasi Gagal</strong>
+                    <ul class="error-list" id="errorList">
+                        <!-- Error messages will be inserted here by JavaScript -->
+                    </ul>
+                    <div style="margin-top: 10px; font-size: 14px;">
+                        Terminato per integrare
                     </div>
                 </div>
             </div>
             
-            <div class="main-content">
-                <h2 class="section-title">Tambah Pengguna Baru</h2>
-                
-                <div id="errorMessage" class="error-message">
-                    <strong>Validasi Gagal</strong>
-                    <ul class="error-list" id="errorList">
-                        <!-- Error messages will be inserted here -->
-                    </ul>
-                </div>
-                
+            <!-- Add User Form -->
+            <div class="form-container">
                 <form id="userForm">
                     <div class="form-group">
                         <label for="username" class="form-label required">Username</label>
-                        <input type="text" id="username" class="form-control" placeholder="Masukkan username" value="user2">
+                        <input type="text" id="username" class="form-input" placeholder="Masukkan username" value="user2">
+                        <div class="note">Username harus unik dan tidak boleh mengandung spasi</div>
                     </div>
                     
                     <div class="form-group">
                         <label for="password" class="form-label required">Password</label>
-                        <input type="password" id="password" class="form-control" placeholder="Masukkan password">
+                        <div class="password-container">
+                            <input type="password" id="password" class="form-input" placeholder="Masukkan password">
+                            <button type="button" class="toggle-password" id="togglePassword">Tampilkan</button>
+                        </div>
+                        <div class="note">Password minimal 6 karakter</div>
                     </div>
                     
                     <div class="form-group">
                         <label for="fullname" class="form-label required">Nama Lengkap</label>
-                        <input type="text" id="fullname" class="form-control" placeholder="Masukkan nama lengkap" value="renbo">
+                        <input type="text" id="fullname" class="form-input" placeholder="Masukkan nama lengkap" value="renbo">
                     </div>
                     
                     <div class="form-group">
@@ -369,128 +498,481 @@
                             <option value="">-- Pilih Role --</option>
                             <option value="administrator">Administrator</option>
                             <option value="user" selected>Pengguna Biasa</option>
-                            <option value="manager">Manajer</option>
                             <option value="supervisor">Supervisor</option>
+                            <option value="manager">Manajer</option>
                         </select>
+                        <div class="note">Pilih role sesuai dengan hak akses yang dibutuhkan</div>
                     </div>
                     
                     <div class="button-group">
-                        <button type="submit" class="btn btn-success">
-                            <span id="submitText">Simpan Pengguna</span>
+                        <button type="submit" class="btn btn-simpan" id="simpanBtn">
+                            <span id="submitText">Simpan</span>
                             <span id="loadingText" style="display: none;">Menyimpan...</span>
                         </button>
-                        <button type="button" id="resetBtn" class="btn btn-secondary">Reset Form</button>
-                        <button type="button" id="cancelBtn" class="btn">Batal</button>
+                        <button type="button" class="btn btn-reset" id="resetBtn">Reset</button>
+                        <button type="button" class="btn btn-batal" id="cancelBtn">Batal</button>
                     </div>
                 </form>
+            </div>
+        </div>
+        
+        <!-- Additional Actions Section -->
+        <div class="section">
+            <h3 class="section-title">Tambah Pengguna</h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="aksi-btn" onclick="performAction('Bus')">Bus</button>
+                <button class="aksi-btn" onclick="performAction('Aksi')">Aksi</button>
+                <button class="aksi-btn" onclick="performAction('Akki')">Akki</button>
+                <button class="aksi-btn" onclick="performAction('Akku')">Akku</button>
+                <button class="aksi-btn" onclick="performAction('Satul')">Satul</button>
+                <button class="aksi-btn btn-simpan" style="min-width: auto;" onclick="submitForm()">Simpan</button>
             </div>
         </div>
     </div>
 
     <script>
+        // Data pengguna untuk simulasi
+        const users = [
+            { username: 'Administrator', role: 'administrator', status: 'active' },
+            { username: 'user1', role: 'user', status: 'active' }
+        ];
+
+        // Inisialisasi setelah DOM siap
         document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
             const form = document.getElementById('userForm');
             const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
             const errorList = document.getElementById('errorList');
+            const simpanBtn = document.getElementById('simpanBtn');
             const resetBtn = document.getElementById('resetBtn');
             const cancelBtn = document.getElementById('cancelBtn');
             const submitText = document.getElementById('submitText');
             const loadingText = document.getElementById('loadingText');
-            
-            // Form submission handler
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Reset error display
-                errorMessage.classList.remove('show');
-                errorList.innerHTML = '';
-                
-                // Get form values
+            const togglePasswordBtn = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+
+            // Toggle password visibility
+            togglePasswordBtn.addEventListener('click', function() {
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    this.textContent = 'Sembunyikan';
+                } else {
+                    passwordInput.type = 'password';
+                    this.textContent = 'Tampilkan';
+                }
+            });
+
+            // Form validation function
+            function validateForm() {
                 const username = document.getElementById('username').value.trim();
                 const password = document.getElementById('password').value.trim();
                 const fullname = document.getElementById('fullname').value.trim();
                 const role = document.getElementById('role').value;
                 
-                // Validation
                 const errors = [];
                 
+                // Validate username
                 if (!username) {
                     errors.push('Username harus diisi');
+                } else if (username.length < 3) {
+                    errors.push('Username minimal 3 karakter');
+                } else if (isUsernameExists(username)) {
+                    errors.push('Username sudah digunakan');
                 }
                 
+                // Validate password
                 if (!password) {
                     errors.push('Password harus diisi');
                 } else if (password.length < 6) {
                     errors.push('Password minimal 6 karakter');
                 }
                 
+                // Validate fullname
                 if (!fullname) {
                     errors.push('Nama lengkap harus diisi');
                 }
                 
+                // Validate role
                 if (!role) {
                     errors.push('Role harus dipilih');
                 }
                 
-                // If there are errors, display them
-                if (errors.length > 0) {
-                    errors.forEach(error => {
-                        const li = document.createElement('li');
-                        li.textContent = error;
-                        errorList.appendChild(li);
-                    });
-                    errorMessage.classList.add('show');
-                    
-                    // Scroll to error message
-                    errorMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                } else {
-                    // Show loading state
-                    submitText.style.display = 'none';
-                    loadingText.style.display = 'inline';
-                    
-                    // Simulate form submission
-                    setTimeout(() => {
-                        alert('Pengguna berhasil ditambahkan!');
-                        
-                        // Reset form
-                        form.reset();
-                        document.getElementById('role').selectedIndex = 0;
-                        
-                        // Reset loading state
-                        submitText.style.display = 'inline';
-                        loadingText.style.display = 'none';
-                        
-                        // In a real application, you would redirect or update the user list here
-                    }, 1500);
+                return errors;
+            }
+
+            // Check if username already exists
+            function isUsernameExists(username) {
+                return users.some(user => user.username.toLowerCase() === username.toLowerCase());
+            }
+            
+            // Show error message
+            function showError(errors) {
+                errorList.innerHTML = '';
+                errors.forEach(error => {
+                    const li = document.createElement('li');
+                    li.textContent = error;
+                    errorList.appendChild(li);
+                });
+                errorMessage.style.display = 'flex';
+                successMessage.style.display = 'none';
+                
+                // Scroll to error message
+                errorMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            
+            // Show success message
+            function showSuccess(message) {
+                successMessage.textContent = message;
+                successMessage.style.display = 'flex';
+                errorMessage.style.display = 'none';
+                
+                // Scroll to success message
+                successMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+                // Auto hide after 5 seconds
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Hide error message
+            function hideError() {
+                errorMessage.style.display = 'none';
+                errorList.innerHTML = '';
+            }
+            
+            // Add user to table
+            function addUserToTable(username, role, status = 'active') {
+                const userTable = document.querySelector('.user-table tbody');
+                const newRow = document.createElement('tr');
+                
+                // Format role for display
+                let roleDisplay = role;
+                let roleClass = 'role-user';
+                if (role === 'administrator') {
+                    roleDisplay = 'Administrator';
+                    roleClass = 'role-admin';
+                } else if (role === 'supervisor') {
+                    roleDisplay = 'Supervisor';
+                    roleClass = 'role-admin';
+                } else if (role === 'manager') {
+                    roleDisplay = 'Manajer';
+                    roleClass = 'role-admin';
                 }
+                
+                newRow.innerHTML = `
+                    <td>${username}</td>
+                    <td><span class="role-badge ${roleClass}">${roleDisplay}</span></td>
+                    <td><span class="status-indicator status-active"></span>Aktif</td>
+                    <td class="aksi-buttons">
+                        <button class="aksi-btn" onclick="editUser('${username}')">Edit</button>
+                        <button class="aksi-btn" onclick="deleteUser('${username}')">Hapus</button>
+                    </td>
+                `;
+                
+                userTable.appendChild(newRow);
+                
+                // Add to users array
+                users.push({ username, role, status });
+            }
+            
+            // Form submission handler
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitForm();
             });
             
             // Reset form handler
             resetBtn.addEventListener('click', function() {
                 form.reset();
-                document.getElementById('role').selectedIndex = 0;
-                errorMessage.classList.remove('show');
-                errorList.innerHTML = '';
+                document.getElementById('role').selectedIndex = 2; // Set to Pengguna Biasa
+                passwordInput.type = 'password';
+                togglePasswordBtn.textContent = 'Tampilkan';
+                hideError();
+                successMessage.style.display = 'none';
             });
             
             // Cancel button handler
             cancelBtn.addEventListener('click', function() {
                 if (confirm('Apakah Anda yakin ingin membatalkan? Semua perubahan akan hilang.')) {
-                    window.location.href = 'daftar_pengguna.html'; // Redirect to user list page
+                    form.reset();
+                    document.getElementById('role').selectedIndex = 2; // Set to Pengguna Biasa
+                    hideError();
+                    successMessage.style.display = 'none';
+                    // In a real application, you might redirect to another page
+                    // window.location.href = 'index.html';
                 }
             });
             
-            // Auto-hide error message when user starts typing
+            // Hide error when user starts typing
             const formInputs = form.querySelectorAll('input, select');
             formInputs.forEach(input => {
-                input.addEventListener('input', function() {
-                    if (errorMessage.classList.contains('show')) {
-                        errorMessage.classList.remove('show');
-                        errorList.innerHTML = '';
+                input.addEventListener('input', hideError);
+                input.addEventListener('change', hideError);
+            });
+            
+            // Dashboard checkboxes
+            const dashboardCheckboxes = document.querySelectorAll('.dashboard-item input[type="checkbox"]');
+            dashboardCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const label = this.nextElementSibling;
+                    if (this.checked) {
+                        label.style.fontWeight = '600';
+                        label.style.color = '#3498db';
+                    } else {
+                        label.style.fontWeight = 'normal';
+                        label.style.color = '#555';
                     }
                 });
             });
         });
+
+        // Fungsi global untuk submit form
+        function submitForm() {
+            const form = document.getElementById('userForm');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorList = document.getElementById('errorList');
+            const simpanBtn = document.getElementById('simpanBtn');
+            const submitText = document.getElementById('submitText');
+            const loadingText = document.getElementById('loadingText');
+            
+            const errors = validateForm();
+            
+            if (errors.length > 0) {
+                showError(errors);
+            } else {
+                // Show loading state
+                submitText.style.display = 'none';
+                loadingText.style.display = 'inline';
+                simpanBtn.disabled = true;
+                simpanBtn.classList.add('loading');
+                
+                // Simulate API call
+                setTimeout(function() {
+                    // Get form values
+                    const username = document.getElementById('username').value.trim();
+                    const password = document.getElementById('password').value.trim();
+                    const fullname = document.getElementById('fullname').value.trim();
+                    const role = document.getElementById('role').value;
+                    
+                    // Reset loading state
+                    submitText.style.display = 'inline';
+                    loadingText.style.display = 'none';
+                    simpanBtn.disabled = false;
+                    simpanBtn.classList.remove('loading');
+                    
+                    // Add user to table
+                    addUserToTable(username, role);
+                    
+                    // Show success message
+                    showSuccess(`Pengguna "${username}" berhasil ditambahkan!`);
+                    
+                    // Reset form
+                    form.reset();
+                    document.getElementById('role').selectedIndex = 2; // Set to Pengguna Biasa
+                    document.getElementById('password').type = 'password';
+                    document.getElementById('togglePassword').textContent = 'Tampilkan';
+                    
+                    // Log for debugging
+                    console.log('User added:', {
+                        username: username,
+                        fullname: fullname,
+                        role: role
+                    });
+                }, 1500);
+            }
+        }
+
+        // Fungsi untuk aksi tombol
+        function performAction(action) {
+            console.log(`Aksi: ${action}`);
+            alert(`Aksi "${action}" diklik!`);
+            
+            // Simulasi aksi khusus
+            switch(action) {
+                case 'Bus':
+                    alert('Fitur Bus: Mengelola data transportasi');
+                    break;
+                case 'Aksi':
+                    alert('Fitur Aksi: Melakukan tindakan tertentu');
+                    break;
+                case 'Akki':
+                    alert('Fitur Akki: Akses cepat ke menu');
+                    break;
+                case 'Akku':
+                    alert('Fitur Akku: Manajemen akun pengguna');
+                    break;
+                case 'Satul':
+                    alert('Fitur Satul: Sistem backup data');
+                    break;
+            }
+        }
+
+        // Fungsi edit pengguna
+        function editUser(username) {
+            const user = users.find(u => u.username === username);
+            if (user) {
+                if (confirm(`Edit pengguna "${username}"?`)) {
+                    // Isi form dengan data pengguna
+                    document.getElementById('username').value = user.username;
+                    document.getElementById('fullname').value = user.username; // Simulasi
+                    document.getElementById('role').value = user.role;
+                    
+                    // Focus ke form
+                    document.getElementById('username').focus();
+                    
+                    // Update tombol simpan
+                    document.getElementById('submitText').textContent = 'Update';
+                    document.getElementById('simpanBtn').classList.add('btn-simpan');
+                    
+                    // Scroll ke form
+                    document.getElementById('userForm').scrollIntoView({ behavior: 'smooth' });
+                    
+                    alert(`Edit mode untuk pengguna "${username}". Ubah data dan klik Simpan untuk memperbarui.`);
+                }
+            }
+        }
+
+        // Fungsi hapus pengguna
+        function deleteUser(username) {
+            if (confirm(`Apakah Anda yakin ingin menghapus pengguna "${username}"?`)) {
+                // Cari baris tabel
+                const table = document.querySelector('.user-table tbody');
+                const rows = table.querySelectorAll('tr');
+                
+                for (let row of rows) {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length > 0 && cells[0].textContent === username) {
+                        table.removeChild(row);
+                        
+                        // Hapus dari array users
+                        const index = users.findIndex(u => u.username === username);
+                        if (index !== -1) {
+                            users.splice(index, 1);
+                        }
+                        
+                        showSuccess(`Pengguna "${username}" berhasil dihapus!`);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Fungsi validasi form (duplikat untuk akses global)
+        function validateForm() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const fullname = document.getElementById('fullname').value.trim();
+            const role = document.getElementById('role').value;
+            
+            const errors = [];
+            
+            // Validate username
+            if (!username) {
+                errors.push('Username harus diisi');
+            } else if (username.length < 3) {
+                errors.push('Username minimal 3 karakter');
+            } else if (isUsernameExists(username)) {
+                errors.push('Username sudah digunakan');
+            }
+            
+            // Validate password
+            if (!password) {
+                errors.push('Password harus diisi');
+            } else if (password.length < 6) {
+                errors.push('Password minimal 6 karakter');
+            }
+            
+            // Validate fullname
+            if (!fullname) {
+                errors.push('Nama lengkap harus diisi');
+            }
+            
+            // Validate role
+            if (!role) {
+                errors.push('Role harus dipilih');
+            }
+            
+            return errors;
+        }
+
+        // Fungsi cek username exists
+        function isUsernameExists(username) {
+            return users.some(user => user.username.toLowerCase() === username.toLowerCase());
+        }
+
+        // Fungsi show error (duplikat untuk akses global)
+        function showError(errors) {
+            const errorMessage = document.getElementById('errorMessage');
+            const errorList = document.getElementById('errorList');
+            const successMessage = document.getElementById('successMessage');
+            
+            errorList.innerHTML = '';
+            errors.forEach(error => {
+                const li = document.createElement('li');
+                li.textContent = error;
+                errorList.appendChild(li);
+            });
+            errorMessage.style.display = 'flex';
+            successMessage.style.display = 'none';
+            
+            // Scroll to error message
+            errorMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Fungsi show success (duplikat untuk akses global)
+        function showSuccess(message) {
+            const successMessage = document.getElementById('successMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            successMessage.textContent = message;
+            successMessage.style.display = 'flex';
+            errorMessage.style.display = 'none';
+            
+            // Scroll to success message
+            successMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        // Fungsi add user to table (duplikat untuk akses global)
+        function addUserToTable(username, role, status = 'active') {
+            const userTable = document.querySelector('.user-table tbody');
+            const newRow = document.createElement('tr');
+            
+            // Format role for display
+            let roleDisplay = role;
+            let roleClass = 'role-user';
+            if (role === 'administrator') {
+                roleDisplay = 'Administrator';
+                roleClass = 'role-admin';
+            } else if (role === 'supervisor') {
+                roleDisplay = 'Supervisor';
+                roleClass = 'role-admin';
+            } else if (role === 'manager') {
+                roleDisplay = 'Manajer';
+                roleClass = 'role-admin';
+            }
+            
+            newRow.innerHTML = `
+                <td>${username}</td>
+                <td><span class="role-badge ${roleClass}">${roleDisplay}</span></td>
+                <td><span class="status-indicator status-active"></span>Aktif</td>
+                <td class="aksi-buttons">
+                    <button class="aksi-btn" onclick="editUser('${username}')">Edit</button>
+                    <button class="aksi-btn" onclick="deleteUser('${username}')">Hapus</button>
+                </td>
+            `;
+            
+            userTable.appendChild(newRow);
+            
+            // Add to users array
+            users.push({ username, role, status });
+        }
     </script>
 </body>
 </html>
