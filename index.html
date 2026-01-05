@@ -1680,9 +1680,10 @@
                     <input type="text" id="searchMember" class="search-input" placeholder="🔍 Cari anggota berdasarkan nama, alamat, atau no telepon..." onkeyup="filterMembers()">
                 </div>
                 <div class="filter-buttons">
-                    <button class="filter-btn active" onclick="filterMembers('all')">Semua</button>
+                    <button class="filter-btn active" onclick="resetFilters()">Semua</button>
                     <button class="filter-btn" onclick="filterMembers('aktif')">Aktif</button>
                     <button class="filter-btn" onclick="filterMembers('nonaktif')">Nonaktif</button>
+                    <!-- PERBAIKAN: Tombol filter kategori yang sudah diperbaiki -->
                     <button class="filter-btn" onclick="filterMembersByCategory('G')">Girsang</button>
                     <button class="filter-btn" onclick="filterMembersByCategory('B')">Boru</button>
                     <button class="filter-btn" onclick="filterMembersByCategory('P')">Panagolan</button>
@@ -2019,6 +2020,7 @@
         let appInitialized = false;
         let childCounter = 0;
         let currentChart = null;
+        let currentFilter = 'all'; // Untuk melacak filter aktif
 
         // Default users
         const defaultUsers = {
@@ -2028,7 +2030,6 @@
 
         // ==================== HELPER FUNCTIONS ====================
         
-        // FIXED: Menambahkan fungsi helper yang hilang
         function formatDate(dateString) {
             if (!dateString) return '-';
             try {
@@ -2891,15 +2892,44 @@
             });
         }
 
+        // PERBAIKAN: Fungsi filter yang sudah diperbaiki
+        function resetFilters() {
+            document.getElementById('searchMember').value = '';
+            currentFilter = 'all';
+            
+            // Reset semua button filter
+            document.querySelectorAll('.filter-buttons .filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Set button "Semua" sebagai aktif
+            const buttons = document.querySelectorAll('.filter-buttons .filter-btn');
+            if (buttons.length > 0) {
+                buttons[0].classList.add('active');
+            }
+            
+            // Tampilkan semua data
+            const tbody = document.getElementById('membersTable');
+            const rows = tbody.getElementsByTagName('tr');
+            
+            for (let row of rows) {
+                row.style.display = '';
+            }
+        }
+
         function filterMembers(status = 'all') {
             const searchTerm = document.getElementById('searchMember').value.toLowerCase();
             const tbody = document.getElementById('membersTable');
             const rows = tbody.getElementsByTagName('tr');
             
+            // Update active button
             document.querySelectorAll('.filter-buttons .filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event?.target.classList.add('active');
+            
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
             
             for (let row of rows) {
                 const cells = row.getElementsByTagName('td');
@@ -2926,23 +2956,33 @@
                 }
                 row.style.display = showRow ? '' : 'none';
             }
+            
+            currentFilter = status;
         }
 
+        // PERBAIKAN BESAR: Fungsi filterMembersByCategory yang sudah diperbaiki
         function filterMembersByCategory(kategori) {
             const searchTerm = document.getElementById('searchMember').value.toLowerCase();
             const tbody = document.getElementById('membersTable');
             const rows = tbody.getElementsByTagName('tr');
             
+            console.log(`🔍 Filtering by category: ${kategori} (${formatKategori(kategori)})`);
+            
+            // Update active button
             document.querySelectorAll('.filter-buttons .filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event?.target.classList.add('active');
+            
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
             
             for (let row of rows) {
                 const cells = row.getElementsByTagName('td');
                 let showRow = false;
                 
                 if (cells.length > 1) {
+                    // Filter berdasarkan pencarian
                     let matchesSearch = searchTerm === '';
                     if (!matchesSearch) {
                         for (let i = 0; i < cells.length; i++) {
@@ -2953,16 +2993,30 @@
                         }
                     }
                     
+                    // Filter berdasarkan kategori
                     let matchesCategory = kategori === 'all';
                     if (!matchesCategory && cells.length > 7) {
-                        const categoryCell = cells[7].textContent;
-                        matchesCategory = categoryCell.includes(formatKategori(kategori));
+                        const categoryCell = cells[7];
+                        
+                        // Debug: lihat isi categoryCell
+                        const categoryText = categoryCell.innerHTML || categoryCell.textContent || '';
+                        console.log(`📋 Row category cell content:`, categoryText);
+                        
+                        // Cek berdasarkan formatKategori
+                        const kategoriText = formatKategori(kategori);
+                        matchesCategory = categoryText.includes(kategoriText) || 
+                                         categoryText.includes(kategori);
+                        
+                        console.log(`🔍 Checking ${kategoriText} in ${categoryText}: ${matchesCategory}`);
                     }
                     
                     showRow = matchesSearch && matchesCategory;
                 }
+                
                 row.style.display = showRow ? '' : 'none';
             }
+            
+            currentFilter = kategori;
         }
 
         // ==================== ATTENDANCE FUNCTIONS ====================
@@ -3664,7 +3718,12 @@
                 P: members.filter(m => parseNomorKK(m.no_kep)?.kategori === 'P').length
             };
             
-            new Chart(categoryCtx, {
+            // Destroy existing chart jika ada
+            if (window.categoryChartInstance) {
+                window.categoryChartInstance.destroy();
+            }
+            
+            window.categoryChartInstance = new Chart(categoryCtx, {
                 type: 'pie',
                 data: {
                     labels: ['Girsang', 'Boru', 'Panagolan'],
@@ -3686,7 +3745,12 @@
                 nonaktif: members.filter(m => m.status === 'nonaktif').length
             };
             
-            new Chart(statusCtx, {
+            // Destroy existing chart jika ada
+            if (window.statusChartInstance) {
+                window.statusChartInstance.destroy();
+            }
+            
+            window.statusChartInstance = new Chart(statusCtx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Aktif', 'Nonaktif'],
@@ -3995,14 +4059,9 @@
             }
         });
 
-        // FIXED: Menambahkan fungsi-fungsi yang diperlukan untuk import/export
+        // Fungsi untuk import/export
         let importData = [];
         let importStep = 1;
-
-        function showImportModal() {
-            document.getElementById('importModal').style.display = 'flex';
-            resetImportSteps();
-        }
 
         function resetImportSteps() {
             importStep = 1;
@@ -4452,7 +4511,6 @@
             }
         }
 
-        // FIXED: Fungsi-fungsi yang belum didefinisikan
         function showFinanceReport() {
             document.getElementById('financeReportModal').style.display = 'flex';
             document.getElementById('reportStartDate').value = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0];
