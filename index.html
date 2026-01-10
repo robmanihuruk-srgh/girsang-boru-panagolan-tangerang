@@ -1,8 +1,4 @@
-<!DOCTYPE html>                                                                                
-  
-  
-  
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -1825,7 +1821,7 @@
                         <button onclick="generateFamilyHierarchyReport()" class="btn btn-success">👨‍👩‍👧‍👦 Laporan Keluarga</button>
                         <button onclick="generateAttendanceReport()" class="btn btn-warning">📅 Laporan Kehadiran</button>
                         <button onclick="generateFinancialReport()" class="btn btn-export">💰 Laporan Keuangan</button>
-                        <button onclick="printAllReports()" class="btn btn-warning">🖨️ Cetak Semua</button>
+                        <button onclick="printAllReports()" class="btn btn-warning">🖨️ Cetak Semua Laporan</button>
                     </div>
                 </div>
                 <div class="dashboard-grid">
@@ -2046,13 +2042,13 @@
         let importData = null;
         let importColumnMapping = {};
 
-        // Default users dengan 4 role yang valid
-        const defaultUsers = {
-            admin: {username: 'admin', password: 'admin123', role: 'admin', fullName: 'Administrator', createdAt: Date.now()},
-            user1: {username: 'user1', password: 'user123', role: 'user', fullName: 'Pengguna Biasa', createdAt: Date.now()},
-            supervisor: {username: 'supervisor', password: 'super123', role: 'supervisor', fullName: 'Supervisor', createdAt: Date.now()},
-            manager: {username: 'manager', password: 'manager123', role: 'manager', fullName: 'Manager', createdAt: Date.now()}
-        };
+        // Default users dengan 4 role yang valid - DIPERBAIKI
+        const defaultUsers = [
+            {firebaseKey: 'admin', username: 'admin', password: 'admin123', role: 'admin', fullName: 'Administrator', createdAt: Date.now()},
+            {firebaseKey: 'user1', username: 'user1', password: 'user123', role: 'user', fullName: 'Pengguna Biasa', createdAt: Date.now()},
+            {firebaseKey: 'supervisor', username: 'supervisor', password: 'super123', role: 'supervisor', fullName: 'Supervisor', createdAt: Date.now()},
+            {firebaseKey: 'manager', username: 'manager', password: 'manager123', role: 'manager', fullName: 'Manager', createdAt: Date.now()}
+        ];
 
         // ==================== FUNGSI HELPER ====================
         function formatDate(dateString) {
@@ -2301,13 +2297,18 @@
                 return;
             }
             
+            // Cari user di defaultUsers
             let userFound = null;
-            for (const userKey in defaultUsers) {
-                const user = defaultUsers[userKey];
+            for (const user of defaultUsers) {
                 if (user.username === username && user.password === password) {
                     userFound = user;
                     break;
                 }
+            }
+            
+            // Jika tidak ditemukan di default, coba cari di users yang sudah ada
+            if (!userFound && users.length > 0) {
+                userFound = users.find(u => u.username === username && u.password === password);
             }
             
             if (!userFound) {
@@ -2357,6 +2358,7 @@
             // Set user info
             document.getElementById('userDisplayName').textContent = currentUser.username;
             document.getElementById('userRole').textContent = getRoleDisplayText(currentUser.role);
+            document.getElementById('userRole').style.backgroundColor = getRoleColor(currentUser.role);
             
             // Setup role-based permissions
             setupRoleBasedPermissions();
@@ -2424,11 +2426,7 @@
                     users = usersData;
                 } else {
                     // Initialize with default users
-                    users = Object.values(defaultUsers).map(user => ({
-                        ...user,
-                        firebaseKey: user.username,
-                        createdAt: user.createdAt || Date.now()
-                    }));
+                    users = defaultUsers;
                     // Save default users to Firebase
                     for (const user of users) {
                         await saveToFirebase(`users/${user.firebaseKey}`, user);
@@ -2515,6 +2513,24 @@
                     renderFinanceTable();
                     updateFinanceSummary();
                     updateReports();
+                }
+            });
+            
+            // Users listener
+            db.ref('users').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const usersArray = [];
+                    for (const key in data) {
+                        if (data.hasOwnProperty(key)) {
+                            usersArray.push({
+                                firebaseKey: key,
+                                ...data[key]
+                            });
+                        }
+                    }
+                    users = usersArray;
+                    renderUsersTable();
                 }
             });
             
@@ -3970,6 +3986,10 @@
             document.getElementById('memberReportModal').style.display = 'flex';
         }
 
+        function closeMemberReportModal() {
+            document.getElementById('memberReportModal').style.display = 'none';
+        }
+
         function generateAttendanceReport() {
             if (attendance.length === 0) {
                 showToast('error', 'Data Kosong', 'Tidak ada data kehadiran untuk laporan.');
@@ -4317,503 +4337,213 @@
             showToast('success', 'Export Berhasil', `Data berhasil diexport ke ${filename}`);
         }
 
-        // ==================== IMPORT FUNCTIONS ====================
-        function showImportModal() {
-            if (!['admin', 'supervisor', 'manager'].includes(currentUser.role)) {
-                showToast('error', 'Akses Ditolak', 'Anda tidak memiliki izin untuk mengimport data.');
-                return;
-            }
+        // ==================== PERBAIKAN: PRINT ALL REPORTS ====================
+        function printAllReports() {
+            showToast('info', 'Mempersiapkan', 'Menyiapkan semua laporan untuk dicetak...');
             
-            importCurrentStep = 1;
-            importData = null;
-            importColumnMapping = {};
+            // Buat modal khusus untuk print semua laporan
+            const printModal = document.createElement('div');
+            printModal.className = 'modal-overlay';
+            printModal.style.display = 'flex';
+            printModal.style.zIndex = '2000';
             
-            // Reset modal
-            document.getElementById('selectedFileName').textContent = '';
-            document.getElementById('columnMappingSection').style.display = 'none';
-            
-            // Show step 1
-            document.querySelectorAll('.step-content').forEach(step => {
-                step.classList.remove('active-step');
-            });
-            document.getElementById('step1').classList.add('active-step');
-            
-            // Update buttons
-            document.getElementById('prevBtn').style.display = 'none';
-            document.getElementById('nextBtn').style.display = 'block';
-            document.getElementById('importBtn').style.display = 'none';
-            document.getElementById('closeBtn').style.display = 'none';
-            document.getElementById('nextBtn').disabled = true;
-            
-            document.getElementById('importModal').style.display = 'flex';
-        }
-
-        function closeImportModal() {
-            document.getElementById('importModal').style.display = 'none';
-        }
-
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            document.getElementById('selectedFileName').textContent = file.name;
-            document.getElementById('nextBtn').disabled = false;
-            
-            // Read the file
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-                    
-                    importData = jsonData;
-                    showToast('success', 'File Terbaca', `Berhasil membaca ${file.name}`);
-                    
-                } catch (error) {
-                    console.error('Error reading file:', error);
-                    showToast('error', 'Error Membaca File', 'Gagal membaca file Excel.');
-                    document.getElementById('nextBtn').disabled = true;
-                }
-            };
-            
-            reader.readAsArrayBuffer(file);
-        }
-
-        function nextStep() {
-            if (importCurrentStep === 1) {
-                if (!importData || importData.length < 2) {
-                    showToast('error', 'Data Tidak Valid', 'File tidak berisi data yang valid.');
-                    return;
-                }
+            // Konten laporan gabungan
+            let combinedReport = `
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1>Girsang Boru Panagolan Tangerang</h1>
+                    <h2>Laporan Lengkap Sistem</h2>
+                    <p>Tanggal: ${new Date().toLocaleDateString('id-ID')}</p>
+                </div>
                 
-                // Process data for preview
-                processImportData();
-                importCurrentStep = 2;
-                
-            } else if (importCurrentStep === 2) {
-                importCurrentStep = 3;
-            }
+                <div style="page-break-after: always;">
+                    <h3>📊 Laporan Data Anggota</h3>
+                    <p>Total Anggota: ${members.length}</p>
+                    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 10px; border: 1px solid #ddd;">No</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Nama</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Nomor KK</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Status</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Kategori</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
             
-            updateImportStep();
-        }
-
-        function prevStep() {
-            importCurrentStep--;
-            updateImportStep();
-        }
-
-        function updateImportStep() {
-            // Hide all steps
-            document.querySelectorAll('.step-content').forEach(step => {
-                step.classList.remove('active-step');
-            });
-            
-            // Show current step
-            document.getElementById(`step${importCurrentStep}`).classList.add('active-step');
-            
-            // Update buttons
-            document.getElementById('prevBtn').style.display = importCurrentStep > 1 ? 'block' : 'none';
-            document.getElementById('nextBtn').style.display = importCurrentStep < 3 ? 'block' : 'none';
-            document.getElementById('importBtn').style.display = importCurrentStep === 2 ? 'block' : 'none';
-            document.getElementById('closeBtn').style.display = importCurrentStep === 3 ? 'block' : 'none';
-        }
-
-        function processImportData() {
-            if (!importData || importData.length < 2) return;
-            
-            const headers = importData[0];
-            const rows = importData.slice(1, 11); // Show first 10 rows
-            
-            // Update preview table
-            const previewHeader = document.getElementById('previewHeader');
-            const previewBody = document.getElementById('previewBody');
-            
-            previewHeader.innerHTML = '';
-            previewBody.innerHTML = '';
-            
-            // Create header
-            const headerRow = document.createElement('tr');
-            headers.forEach(header => {
-                const th = document.createElement('th');
-                th.textContent = header || '';
-                headerRow.appendChild(th);
-            });
-            previewHeader.appendChild(headerRow);
-            
-            // Create rows
-            rows.forEach(row => {
-                const tr = document.createElement('tr');
-                headers.forEach((header, index) => {
-                    const td = document.createElement('td');
-                    td.textContent = row[index] || '';
-                    tr.appendChild(td);
-                });
-                previewBody.appendChild(tr);
-            });
-            
-            // Update stats
-            document.getElementById('totalRows').textContent = importData.length - 1;
-            document.getElementById('validRows').textContent = importData.length - 1;
-            document.getElementById('duplicateRows').textContent = '0';
-            document.getElementById('errorRows').textContent = '0';
-            
-            // Auto-map columns
-            autoMapColumns(headers);
-        }
-
-        function autoMapColumns(headers) {
-            const columnMapping = {};
-            const mappingGrid = document.getElementById('columnMappingGrid');
-            mappingGrid.innerHTML = '';
-            
-            const fieldMappings = {
-                'no_kep': ['NO', 'NOMOR', 'NO KK', 'NOMOR KK', 'NO_KEP'],
-                'nama': ['NAMA', 'NAMA LENGKAP', 'NAME', 'FULL NAME'],
-                'tgl_lahir': ['TANGGAL LAHIR', 'TGL LAHIR', 'TANGGAL_LAHIR', 'BIRTH DATE'],
-                'alamat': ['ALAMAT', 'ADDRESS', 'ALAMAT LENGKAP'],
-                'no_hp': ['NO HP', 'TELEPON', 'PHONE', 'HAND PHONE'],
-                'jabatan': ['JABATAN', 'POSISI', 'POSITION'],
-                'status': ['STATUS', 'STATUS ANGGOTA', 'MEMBER STATUS']
-            };
-            
-            headers.forEach((header, index) => {
-                if (!header) return;
-                
-                const headerUpper = header.toString().toUpperCase();
-                let mappedField = 'ignore';
-                
-                // Find matching field
-                for (const [field, keywords] of Object.entries(fieldMappings)) {
-                    if (keywords.some(keyword => headerUpper.includes(keyword))) {
-                        mappedField = field;
-                        break;
-                    }
-                }
-                
-                columnMapping[index] = mappedField;
-                
-                // Create mapping UI
-                const mappingDiv = document.createElement('div');
-                mappingDiv.style.display = 'flex';
-                mappingDiv.style.alignItems = 'center';
-                mappingDiv.style.gap = '10px';
-                
-                const headerSpan = document.createElement('span');
-                headerSpan.textContent = header;
-                headerSpan.style.fontWeight = '600';
-                
-                const arrowSpan = document.createElement('span');
-                arrowSpan.textContent = '→';
-                arrowSpan.style.color = '#666';
-                
-                const select = document.createElement('select');
-                select.style.padding = '5px';
-                select.style.borderRadius = '4px';
-                select.style.border = '1px solid #ddd';
-                select.style.width = '100%';
-                
-                // Add options
-                const options = [
-                    { value: 'ignore', text: 'Abaikan' },
-                    { value: 'no_kep', text: 'No KK' },
-                    { value: 'nama', text: 'Nama' },
-                    { value: 'tgl_lahir', text: 'Tanggal Lahir' },
-                    { value: 'alamat', text: 'Alamat' },
-                    { value: 'no_hp', text: 'No HP' },
-                    { value: 'jabatan', text: 'Jabatan' },
-                    { value: 'status', text: 'Status' }
-                ];
-                
-                options.forEach(option => {
-                    const opt = document.createElement('option');
-                    opt.value = option.value;
-                    opt.textContent = option.text;
-                    if (option.value === mappedField) {
-                        opt.selected = true;
-                    }
-                    select.appendChild(opt);
-                });
-                
-                select.onchange = function() {
-                    columnMapping[index] = this.value;
-                };
-                
-                mappingDiv.appendChild(headerSpan);
-                mappingDiv.appendChild(arrowSpan);
-                mappingDiv.appendChild(select);
-                mappingGrid.appendChild(mappingDiv);
-            });
-            
-            importColumnMapping = columnMapping;
-            document.getElementById('columnMappingSection').style.display = 'block';
-        }
-
-        async function startImport() {
-            if (!importData || importData.length < 2) {
-                showToast('error', 'Data Kosong', 'Tidak ada data untuk diimport.');
-                return;
-            }
-            
-            // Move to step 3
-            importCurrentStep = 3;
-            updateImportStep();
-            
-            const headers = importData[0];
-            const rows = importData.slice(1);
-            const totalRows = rows.length;
-            let importedCount = 0;
-            let duplicateCount = 0;
-            let errorCount = 0;
-            
-            const overwriteData = document.getElementById('overwriteData').checked;
-            const skipDuplicates = document.getElementById('skipDuplicates').checked;
-            
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
-                
-                // Update progress
-                const progress = Math.round((i / totalRows) * 100);
-                document.getElementById('progressBar').style.width = `${progress}%`;
-                document.getElementById('progressText').textContent = `Memproses baris ${i + 1} dari ${totalRows}`;
-                document.getElementById('progressDetails').textContent = `Diimport: ${importedCount}, Duplikat: ${duplicateCount}, Error: ${errorCount}`;
-                
-                try {
-                    // Map row data based on column mapping
-                    const memberData = {};
-                    let hasRequiredData = false;
-                    
-                    headers.forEach((header, index) => {
-                        const field = importColumnMapping[index];
-                        if (field && field !== 'ignore' && row[index] !== undefined) {
-                            memberData[field] = row[index];
-                            
-                            // Check if we have required data
-                            if (field === 'nama' || field === 'no_kep') {
-                                hasRequiredData = true;
-                            }
-                        }
-                    });
-                    
-                    if (!hasRequiredData) {
-                        errorCount++;
-                        continue;
-                    }
-                    
-                    // Check for duplicates
-                    const isDuplicate = members.some(member => 
-                        member.no_kep === memberData.no_kep || 
-                        (member.nama === memberData.nama && member.alamat === memberData.alamat)
-                    );
-                    
-                    if (isDuplicate && skipDuplicates) {
-                        duplicateCount++;
-                        continue;
-                    }
-                    
-                    // Prepare member data
-                    const finalData = {
-                        ...memberData,
-                        status: memberData.status || 'aktif',
-                        jabatan: memberData.jabatan || 'Anggota',
-                        children: [],
-                        jumlah_anak: 0,
-                        createdAt: Date.now(),
-                        createdBy: currentUser.username,
-                        updatedAt: Date.now(),
-                        updatedBy: currentUser.username
-                    };
-                    
-                    // Parse nomor KK if present
-                    if (finalData.no_kep) {
-                        finalData.parsed_kk = parseNomorKK(finalData.no_kep);
-                    }
-                    
-                    // Save to Firebase
-                    const newKey = db.ref('members').push().key;
-                    await saveToFirebase(`members/${newKey}`, finalData);
-                    
-                    importedCount++;
-                    
-                } catch (error) {
-                    console.error('Error importing row:', error);
-                    errorCount++;
-                }
-                
-                // Small delay to show progress
-                await new Promise(resolve => setTimeout(resolve, 50));
-            }
-            
-            // Complete import
-            document.getElementById('progressBar').style.width = '100%';
-            document.getElementById('progressText').textContent = 'Import Selesai!';
-            document.getElementById('progressDetails').textContent = `Total: ${importedCount} diimport, ${duplicateCount} duplikat, ${errorCount} error`;
-            
-            showToast('success', 'Import Berhasil', `Berhasil mengimport ${importedCount} anggota baru.`);
-            
-            // Auto-close after 3 seconds
-            setTimeout(() => {
-                closeImportModal();
-            }, 3000);
-        }
-
-        // ==================== EXPORT FUNCTIONS ====================
-        function exportToExcel() {
-            if (members.length === 0) {
-                showToast('error', 'Data Kosong', 'Tidak ada data untuk diexport.');
-                return;
-            }
-            
-            // Prepare data for Excel
-            const data = [
-                ['No', 'Nama', 'Nomor KK', 'Tanggal Lahir', 'Alamat', 'No HP', 'Jabatan', 'Status', 'Kategori', 'Jumlah Anak']
-            ];
-            
-            members.forEach((member, index) => {
+            // Data anggota (maksimal 50 untuk print)
+            const printMembers = members.slice(0, 50);
+            printMembers.forEach((member, index) => {
                 const parsed = parseNomorKK(member.no_kep);
                 const kategori = parsed ? formatKategori(parsed.kategori) : '-';
                 
-                data.push([
-                    index + 1,
-                    member.nama || '-',
-                    member.no_kep || '-',
-                    formatDate(member.tgl_lahir),
-                    member.alamat || '-',
-                    member.no_hp || '-',
-                    member.jabatan || 'Anggota',
-                    member.status === 'aktif' ? 'Aktif' : 'Nonaktif',
-                    kategori,
-                    member.jumlah_anak || 0
-                ]);
+                combinedReport += `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${index + 1}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${member.nama}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${member.no_kep}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${member.status === 'aktif' ? 'Aktif' : 'Nonaktif'}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${kategori}</td>
+                    </tr>
+                `;
             });
             
-            // Create worksheet
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            
-            // Create workbook
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Data Anggota');
-            
-            // Export to Excel
-            XLSX.writeFile(wb, 'Data_Anggota_Girsang_Boru_Panagolan.xlsx');
-            
-            showToast('success', 'Export Berhasil', 'Data berhasil diexport ke Excel.');
-        }
-
-        function exportToPDF() {
-            if (members.length === 0) {
-                showToast('error', 'Data Kosong', 'Tidak ada data untuk diexport.');
-                return;
-            }
-            
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // Add title
-            doc.setFontSize(16);
-            doc.text('DATA ANGGOTA GIRSANG BORU PANAGOLAN', 20, 20);
-            doc.setFontSize(10);
-            doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID')}`, 20, 30);
-            
-            // Prepare table data
-            const tableData = members.map((member, index) => {
-                const parsed = parseNomorKK(member.no_kep);
-                const kategori = parsed ? formatKategori(parsed.kategori) : '-';
+            combinedReport += `
+                        </tbody>
+                    </table>
+                    <p style="margin-top: 20px; font-size: 12px; color: #666;">
+                        Menampilkan ${printMembers.length} dari ${members.length} anggota
+                    </p>
+                </div>
                 
-                return [
-                    index + 1,
-                    member.nama || '-',
-                    member.no_kep || '-',
-                    formatDate(member.tgl_lahir),
-                    member.status === 'aktif' ? 'Aktif' : 'Nonaktif',
-                    kategori,
-                    member.jumlah_anak || 0
-                ];
-            });
+                <div style="page-break-after: always; margin-top: 30px;">
+                    <h3>💰 Laporan Keuangan Ringkasan</h3>
+            `;
             
-            // Create table
-            doc.autoTable({
-                head: [['No', 'Nama', 'No KK', 'Tanggal Lahir', 'Status', 'Kategori', 'Jml Anak']],
-                body: tableData,
-                startY: 40,
-                theme: 'striped',
-                headStyles: { fillColor: [52, 152, 219] }
-            });
+            // Ringkasan keuangan
+            const totalIncome = finance
+                .filter(f => f.type === 'pemasukan')
+                .reduce((sum, f) => sum + (f.amount || 0), 0);
             
-            // Save PDF
-            doc.save('Data_Anggota_Girsang_Boru_Panagolan.pdf');
+            const totalExpense = finance
+                .filter(f => f.type === 'pengeluaran')
+                .reduce((sum, f) => sum + (f.amount || 0), 0);
             
-            showToast('success', 'Export Berhasil', 'Data berhasil diexport ke PDF.');
-        }
-
-        function exportAttendance() {
-            if (attendance.length === 0) {
-                showToast('error', 'Data Kosong', 'Tidak ada data kehadiran untuk diexport.');
-                return;
-            }
+            const totalBalance = totalIncome - totalExpense;
             
-            // Prepare data for Excel
-            const data = [
-                ['Tanggal', 'Nama Anggota', 'No KK', 'Status', 'Keterangan', 'Waktu']
-            ];
-            
-            attendance.forEach(record => {
-                data.push([
-                    formatDate(record.date),
-                    record.memberName || '-',
-                    record.memberNoKep || '-',
-                    record.status === 'hadir' ? 'Hadir' : 
-                    record.status === 'sakit' ? 'Sakit' : 
-                    record.status === 'izin' ? 'Izin' : 'Alfa',
-                    record.note || '-',
-                    formatDateTime(record.createdAt)
-                ]);
-            });
-            
-            // Create worksheet
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            
-            // Create workbook
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Data Kehadiran');
-            
-            // Export to Excel
-            XLSX.writeFile(wb, 'Data_Kehadiran_Girsang_Boru_Panagolan.xlsx');
-            
-            showToast('success', 'Export Berhasil', 'Data kehadiran berhasil diexport.');
-        }
-
-        // ==================== PRINT FUNCTIONS ====================
-        function printDetail() {
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Detail Anggota</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; }
-                        .print-header { text-align: center; margin-bottom: 30px; }
-                        .detail-view { margin-top: 20px; }
-                        .detail-row { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
-                        .detail-label { font-weight: bold; width: 150px; display: inline-block; }
-                        .detail-value { display: inline-block; }
-                    </style>
-                </head>
-                <body>
-                    <div class="print-header">
-                        <h1>Girsang Boru Panagolan Tangerang</h1>
-                        <h2>Detail Anggota</h2>
+            combinedReport += `
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0;">
+                    <div style="background: #d4edda; padding: 15px; border-radius: 5px; text-align: center;">
+                        <h4>${formatCurrency(totalIncome)}</h4>
+                        <p>Total Pemasukan</p>
                     </div>
-                    ${document.getElementById('detailContent').innerHTML}
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-            printWindow.print();
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 5px; text-align: center;">
+                        <h4>${formatCurrency(totalExpense)}</h4>
+                        <p>Total Pengeluaran</p>
+                    </div>
+                    <div style="background: #d1ecf1; padding: 15px; border-radius: 5px; text-align: center;">
+                        <h4>${formatCurrency(totalBalance)}</h4>
+                        <p>Saldo</p>
+                    </div>
+                </div>
+                
+                <h4>Transaksi Terbaru:</h4>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th style="padding: 10px; border: 1px solid #ddd;">Tanggal</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Jenis</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Jumlah</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // Data transaksi terbaru
+            const recentFinance = finance.slice(0, 20);
+            recentFinance.forEach(record => {
+                const typeText = record.type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran';
+                const typeColor = record.type === 'pemasukan' ? '#2ecc71' : '#e74c3c';
+                
+                combinedReport += `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${formatDate(record.date)}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; color: ${typeColor};">${typeText}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: 600; color: ${typeColor};">${formatCurrency(record.amount)}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${record.description || '-'}</td>
+                    </tr>
+                `;
+            });
+            
+            combinedReport += `
+                    </tbody>
+                </table>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <h3>📈 Statistik Sistem</h3>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                        <p><strong>Total Anggota:</strong> ${members.length}</p>
+                        <p><strong>Anggota Aktif:</strong> ${members.filter(m => m.status === 'aktif').length}</p>
+                        <p><strong>Total Transaksi Keuangan:</strong> ${finance.length}</p>
+                        <p><strong>Total Catatan Kehadiran:</strong> ${attendance.length}</p>
+                        <p><strong>Total Pengguna Sistem:</strong> ${users.length}</p>
+                    </div>
+                    <p style="text-align: center; color: #666; margin-top: 30px; font-size: 12px;">
+                        Laporan ini dicetak otomatis dari Sistem Manajemen Girsang Boru Panagolan Tangerang
+                    </p>
+                </div>
+            `;
+            
+            printModal.innerHTML = `
+                <div class="modal-box" style="max-width: 1000px; max-height: 90vh;">
+                    <div class="modal-header">
+                        <h3>🖨️ Cetak Semua Laporan</h3>
+                        <div class="modal-close" onclick="this.parentElement.parentElement.remove()">×</div>
+                    </div>
+                    <div class="modal-body">
+                        <div id="combinedReportContent" style="padding: 20px;">
+                            ${combinedReport}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button onclick="printCombinedReport()" class="btn btn-primary">🖨️ Cetak Sekarang</button>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="btn btn-danger">Tutup</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(printModal);
+            
+            // Fungsi untuk print laporan gabungan
+            window.printCombinedReport = function() {
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Laporan Lengkap - Girsang Boru Panagolan</title>
+                        <style>
+                            @media print {
+                                body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
+                                h1, h2, h3 { color: #2c3e50; }
+                                h1 { font-size: 24px; margin-bottom: 10px; }
+                                h2 { font-size: 20px; margin-bottom: 15px; }
+                                h3 { font-size: 16px; margin-bottom: 10px; }
+                                table { width: 100%; border-collapse: collapse; margin: 15px 0; page-break-inside: avoid; }
+                                th, td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+                                th { background-color: #f8f9fa; font-weight: bold; }
+                                .page-break { page-break-after: always; }
+                                .summary-box { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; }
+                                .footer-note { text-align: center; color: #666; margin-top: 30px; font-size: 10px; }
+                            }
+                            @media screen {
+                                body { font-family: Arial, sans-serif; padding: 30px; }
+                                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                                th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+                                th { background-color: #f8f9fa; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        ${combinedReport}
+                        <script>
+                            window.onload = function() {
+                                window.print();
+                                setTimeout(function() {
+                                    window.close();
+                                }, 1000);
+                            };
+                        <\/script>
+                    </body>
+                    </html>
+                `);
+                printWindow.document.close();
+            };
         }
 
+        // ==================== FUNGSI LAINNYA ====================
         function printMemberReport() {
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
@@ -4844,15 +4574,8 @@
         }
 
         function printAttendanceReport() {
-            // This would be implemented similarly to printMemberReport
+            // Implementasi sederhana print attendance report
             window.print();
-        }
-
-        function printAllReports() {
-            showToast('info', 'Mempersiapkan', 'Menyiapkan semua laporan untuk dicetak...');
-            setTimeout(() => {
-                window.print();
-            }, 1000);
         }
 
         function generateFamilyHierarchyReport() {
@@ -4992,4 +4715,3 @@
     </script>
 </body>
 </html>
-
