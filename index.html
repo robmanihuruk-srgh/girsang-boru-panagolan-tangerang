@@ -1571,15 +1571,16 @@
                     <label for="userFullName">Nama Lengkap *</label>
                     <input type="text" id="userFullName" class="form-control" placeholder="Nama lengkap pengguna" required>
                 </div>
-                <div class="form-group">
-                    <label for="userRole">Role *</label>
-                    <select id="userRole" class="form-control">
-                        <option value="admin">Administrator - Akses penuh ke semua fitur sistem</option>
-                        <option value="user" selected>Pengguna Biasa - Akses terbatas, hanya melihat data</option>
-                        <option value="supervisor">Supervisor - Dapat mengelola data anggota</option>
-                        <option value="manager">Manager - Dapat mengelola data dan laporan</option>
-                    </select>
-                </div>
+               <div class="form-group">
+    <label for="userRole">Role *</label>
+    <select id="userRole" class="form-control" required>
+        <option value="">Pilih Role</option>
+        <option value="user">Pengguna Biasa - Hanya Melihat Data</option>
+        <option value="supervisor">Supervisor - Mengelola Data Anggota</option>
+        <option value="manager">Manager - Mengelola Data & Laporan</option>
+        <option value="admin">Administrator - Akses Penuh</option>
+    </select>
+</div>
                 <input type="hidden" id="userId">
             </div>
             <div class="modal-footer">
@@ -6388,3 +6389,4 @@
     </script>
 </body>
 </html>
+
