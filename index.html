@@ -2262,9 +2262,9 @@
             // Listener Members
             db.ref('members').on('value', (snapshot) => {
                 const data = snapshot.val();
-                const membersArray = [];
+                const membersArray = []; // Inisialisasi array kosong
                 
-                // Fix: Handle null data (empty db) correctly
+                // Jika data ada, isi array. Jika null (kosong), array tetap kosong.
                 if (data) {
                     for (const key in data) {
                         if (data.hasOwnProperty(key)) {
@@ -2273,15 +2273,16 @@
                     }
                 }
                 
-                // Update global data even if empty
+                // Update variabel global (bahkan jika kosong)
                 members = membersArray;
                 
+                // Render ulang tampilan
                 renderMembersTable();
                 updateDashboard();
                 updateReports();
                 updateCharts();
                 
-                // Re-apply filter if searching
+                // Re-apply filter jika sedang mencari
                 const searchTerm = document.getElementById('searchMember').value;
                 if(searchTerm) filterMembers();
             });
@@ -2304,7 +2305,6 @@
                 renderAttendanceTable();
                 updateReports();
                 
-                // Re-apply filter if searching
                 const searchTerm = document.getElementById('searchAttendance').value;
                 if(searchTerm) filterAttendance();
             });
