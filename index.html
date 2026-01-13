@@ -658,7 +658,6 @@
                         <div id="checkinSearchResults" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 0 0 5px 5px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
                     </div>
                 </div>
-
                 <!-- SELECTED MEMBER DISPLAY -->
                 <div id="selectedMemberInfo" style="background: #e8f4fc; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; border-left: 5px solid #3498db;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -669,14 +668,11 @@
                         <button onclick="resetCheckinSelection()" style="background: #e74c3c; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold;">×</button>
                     </div>
                 </div>
-
                 <input type="hidden" id="attendanceMemberId">
-
                 <div class="form-group">
                     <label for="attendanceDate">Tanggal *</label>
                     <input type="date" id="attendanceDate" class="form-control">
                 </div>
-                
                 <div class="form-group">
                     <label for="attendanceStatus">Status *</label>
                     <select id="attendanceStatus" class="form-control">
@@ -1525,7 +1521,6 @@
                 case 'user': return 'Pengguna Biasa';
                 case 'supervisor': return 'Supervisor';
                 case 'manager': return 'Manager';
-                case 'guest': return 'Tamu';
                 default: return role;
             }
         }
@@ -1536,7 +1531,6 @@
                 case 'user': return '#3498db';
                 case 'supervisor': return '#2ecc71';
                 case 'manager': return '#f39c12';
-                case 'guest': return '#7f8c8d';
                 default: return '#95a5a6';
             }
         }
@@ -1731,7 +1725,7 @@
              document.getElementById('loginPage').style.display = 'flex';
         }
 
-        // ==================== INITIALIZATION ====================
+        // ==================== INITIALIZE APP ====================
         async function initializeApp() {
             if (appInitialized) return;
             
