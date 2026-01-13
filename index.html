@@ -2114,6 +2114,11 @@
             localStorage.removeItem('currentUser');
             document.getElementById('loginPage').style.display = 'flex';
             document.getElementById('app').style.display = 'none';
+            
+            // Reset login form inputs
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            
             closeAllModals();
             showToast('info', 'Logged Out', 'Anda telah logout dari sistem.');
         }
@@ -3590,11 +3595,40 @@
             
             Object.keys(families).sort().forEach(famId => {
                 const famMembers = families[famId];
+                
+                // --- MODIFIED SORTING LOGIC ---
                 famMembers.sort((a, b) => {
-                    const statusA = a.no_kep.split('-')[2] || 'Z';
-                    const statusB = b.no_kep.split('-')[2] || 'Z';
-                    return statusA.localeCompare(statusB); 
+                     // Extract status segment (3rd part, index 2)
+                     const getStatus = (m) => {
+                         if (!m.no_kep) return 'Z';
+                         const parts = m.no_kep.split('-');
+                         return parts.length > 2 ? parts[2].toUpperCase() : 'Z';
+                     };
+                     
+                     const statusA = getStatus(a);
+                     const statusB = getStatus(b);
+                     
+                     // Priority: S (1), I (2), A (3), Others (4)
+                     const getPriority = (s) => {
+                         if (s === 'S') return 1;
+                         if (s === 'I') return 2;
+                         if (s.startsWith('A')) return 3;
+                         return 4;
+                     };
+
+                     const priorityA = getPriority(statusA);
+                     const priorityB = getPriority(statusB);
+                     
+                     if (priorityA !== priorityB) return priorityA - priorityB;
+                     
+                     // Secondary sort for children (A1, A2...) using numeric sort
+                     if (priorityA === 3) {
+                         return statusA.localeCompare(statusB, undefined, { numeric: true });
+                     }
+                     
+                     return (a.nama || '').localeCompare(b.nama || '');
                 });
+                // --- END MODIFIED SORTING ---
 
                 const head = famMembers.find(m => m.no_kep.includes('-S-')) || famMembers[0];
                 html += `<div style="background:#f8f9fa; padding:15px; margin-bottom:15px; border-radius:8px; border-left: 4px solid #3498db;">`;
