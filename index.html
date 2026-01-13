@@ -440,6 +440,16 @@
         .action-btn.reset:hover {
             background: #e67e22;
         }
+        
+        /* NEW BUTTON STYLE FOR QR CODE */
+        .action-btn.qr {
+            background: #34495e;
+            color: white;
+        }
+
+        .action-btn.qr:hover {
+            background: #2c3e50;
+        }
 
         /* FORM STYLES */
         .form-group {
@@ -962,6 +972,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <!-- MODAL IMPOR -->
     <div id="importModal" class="modal-overlay">
@@ -1042,6 +1053,26 @@
             <div class="modal-footer">
                 <button onclick="printDetail()" class="btn btn-primary">🖨️ Cetak</button>
                 <button onclick="closeDetailModal()" class="btn btn-danger">Tutup</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL GENERATE QR CODE -->
+    <div id="qrCodeModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 400px; text-align: center;">
+            <div class="modal-header">
+                <h3>📱 QR Code Anggota</h3>
+                <div class="modal-close" onclick="closeQRCodeModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div id="qrcodeDisplay" style="display: flex; justify-content: center; margin: 20px 0;"></div>
+                <h4 id="qrMemberName" style="color: #2c3e50; margin-bottom: 5px;">Nama Anggota</h4>
+                <p id="qrMemberKK" style="color: #666; font-size: 14px;">No KK</p>
+                <p style="font-size: 12px; color: #999; margin-top: 15px;">Gunakan QR Code ini untuk check-in kehadiran.</p>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button onclick="printQRCode()" class="btn btn-primary">🖨️ Cetak QR</button>
+                <button onclick="closeQRCodeModal()" class="btn btn-danger">Tutup</button>
             </div>
         </div>
     </div>
@@ -2712,6 +2743,7 @@
                             <button onclick="showDetailMember('${member.firebaseKey}')" class="action-btn view" title="Detail">👁️</button>
                             <button onclick="showEditMemberForm('${member.firebaseKey}')" class="action-btn edit" title="Edit">✏️</button>
                             <button onclick="deleteMember('${member.firebaseKey}')" class="action-btn delete" title="Hapus">🗑️</button>
+                            <button onclick="showGenerateQRModal('${member.no_kep}', '${member.nama}')" class="action-btn qr" title="Generate QR">📱</button>
                         </div>
                     </td>
                 `;
@@ -4068,6 +4100,56 @@
                 isScanning = false;
                 document.getElementById('scanResult').textContent = '';
             }, 3000);
+        }
+        
+        // Generate QR Code Function
+        function showGenerateQRModal(noKep, nama) {
+            if (!noKep) {
+                showToast('error', 'Error', 'Anggota tidak memiliki Nomor KK.');
+                return;
+            }
+            
+            document.getElementById('qrCodeModal').style.display = 'flex';
+            document.getElementById('qrMemberName').textContent = nama;
+            document.getElementById('qrMemberKK').textContent = noKep;
+            
+            const qrContainer = document.getElementById('qrcodeDisplay');
+            qrContainer.innerHTML = ''; // Clear previous QR
+            
+            new QRCode(qrContainer, {
+                text: noKep,
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+
+        function closeQRCodeModal() {
+            document.getElementById('qrCodeModal').style.display = 'none';
+        }
+
+        function printQRCode() {
+            const printContent = document.getElementById('qrcodeDisplay').innerHTML;
+            const name = document.getElementById('qrMemberName').textContent;
+            const kk = document.getElementById('qrMemberKK').textContent;
+            
+            const win = window.open('', '', 'height=500,width=500');
+            win.document.write('<html><head><title>Print QR Code</title>');
+            win.document.write('<style>body { font-family: sans-serif; text-align: center; padding: 20px; } .qr-container { display: flex; justify-content: center; margin: 20px 0; } img { width: 200px; height: 200px; }</style>');
+            win.document.write('</head><body>');
+            win.document.write(`<h2>${name}</h2>`);
+            win.document.write(`<p>${kk}</p>`);
+            win.document.write(`<div class="qr-container">${printContent}</div>`);
+            win.document.write('<p>Girsang Boru Panagolan Tangerang</p>');
+            win.document.write('</body></html>');
+            win.document.close();
+            win.focus();
+            setTimeout(() => {
+                 win.print();
+                 win.close();
+            }, 500);
         }
 
         // ==================== INITIALIZATION ====================
