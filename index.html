@@ -2259,66 +2259,91 @@
         function setupFirebaseListeners() {
             if (!db) return;
             
+            // Listener Members
             db.ref('members').on('value', (snapshot) => {
                 const data = snapshot.val();
+                const membersArray = [];
+                
+                // Fix: Handle null data (empty db) correctly
                 if (data) {
-                    const membersArray = [];
                     for (const key in data) {
                         if (data.hasOwnProperty(key)) {
                             membersArray.push({ firebaseKey: key, ...data[key] });
                         }
                     }
-                    members = membersArray;
-                    renderMembersTable();
-                    updateDashboard();
-                    updateReports();
-                    updateCharts();
                 }
+                
+                // Update global data even if empty
+                members = membersArray;
+                
+                renderMembersTable();
+                updateDashboard();
+                updateReports();
+                updateCharts();
+                
+                // Re-apply filter if searching
+                const searchTerm = document.getElementById('searchMember').value;
+                if(searchTerm) filterMembers();
             });
             
+            // Listener Attendance
             db.ref('attendance').on('value', (snapshot) => {
                 const data = snapshot.val();
+                const attendanceArray = [];
+                
                 if (data) {
-                    const attendanceArray = [];
                     for (const key in data) {
                         if (data.hasOwnProperty(key)) {
                             attendanceArray.push({ firebaseKey: key, ...data[key] });
                         }
                     }
-                    attendance = attendanceArray;
-                    renderAttendanceTable();
-                    updateReports();
                 }
+                
+                attendance = attendanceArray;
+                
+                renderAttendanceTable();
+                updateReports();
+                
+                // Re-apply filter if searching
+                const searchTerm = document.getElementById('searchAttendance').value;
+                if(searchTerm) filterAttendance();
             });
             
+            // Listener Finance
             db.ref('finance').on('value', (snapshot) => {
                 const data = snapshot.val();
+                const financeArray = [];
+                
                 if (data) {
-                    const financeArray = [];
                     for (const key in data) {
                         if (data.hasOwnProperty(key)) {
                             financeArray.push({ firebaseKey: key, ...data[key] });
                         }
                     }
-                    finance = financeArray;
-                    renderFinanceTable();
-                    updateFinanceSummary();
-                    updateReports();
                 }
+                
+                finance = financeArray;
+                
+                renderFinanceTable();
+                updateFinanceSummary();
+                updateReports();
             });
             
+            // Listener Users
             db.ref('users').on('value', (snapshot) => {
                 const data = snapshot.val();
+                const usersArray = [];
+                
                 if (data) {
-                    const usersArray = [];
                     for (const key in data) {
                         if (data.hasOwnProperty(key)) {
                             usersArray.push({ firebaseKey: key, ...data[key] });
                         }
                     }
-                    users = usersArray;
-                    renderUsersTable();
                 }
+                
+                users = usersArray;
+                renderUsersTable();
             });
             
             console.log('🎯 Firebase listeners aktif');
