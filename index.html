@@ -1254,7 +1254,7 @@
         </div>
     </div>
 
-    <!-- MODAL FORGOT PASSWORD (ADMIN) -->
+    <!-- MODAL FORGOT PASSWORD (ADMIN RECOVERY) -->
     <div id="forgotPasswordModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 400px;">
             <div class="modal-header">
@@ -3294,8 +3294,202 @@
             showToast('success', 'Sukses', 'Transaksi disimpan');
         }
 
-        function exportToExcel() { showToast('info', 'Export', 'Fitur export Excel akan segera hadir.'); }
-        function exportToPDF() { showToast('info', 'Export', 'Fitur export PDF akan segera hadir.'); }
+        function exportToExcel() {
+            if (members.length === 0) {
+                showToast('warning', 'Tidak Ada Data', 'Tidak ada data anggota untuk diexport.');
+                return;
+            }
+
+            try {
+                showToast('info', 'Memproses', 'Sedang membuat file Excel...');
+
+                // 1. Format data untuk Excel
+                const dataToExport = members.map((member, index) => {
+                    const parsed = parseNomorKK(member.no_kep);
+                    
+                    // Format data anak menjadi string agar bisa masuk ke satu sel
+                    let childrenString = '';
+                    if (member.children && member.children.length > 0) {
+                        childrenString = member.children.map(c => 
+                            `${c.nama} (${c.jenis_kelamin || '-'}, ${c.pendidikan || '-'})`
+                        ).join('; ');
+                    }
+
+                    return {
+                        'No': index + 1,
+                        'Nomor KK': member.no_kep || '-',
+                        'Nama Lengkap': member.nama || '-',
+                        'Tanggal Lahir': formatDate(member.tgl_lahir),
+                        'Alamat': member.alamat || '-',
+                        'No HP': member.no_hp || '-',
+                        'Jabatan': member.jabatan || 'Anggota',
+                        'Status': member.status === 'aktif' ? 'Aktif' : 'Nonaktif',
+                        'Kategori': parsed ? formatKategori(parsed.kategori) : '-',
+                        'Status Keluarga': parsed ? formatStatusKeluarga(parsed.status) : '-',
+                        'Jumlah Anak': member.jumlah_anak || 0,
+                        'Detail Anak': childrenString || '-',
+                        'Tanggal Bergabung': member.createdAt ? new Date(member.createdAt).toLocaleDateString('id-ID') : '-'
+                    };
+                });
+
+                // 2. Buat Worksheet
+                const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+                // Atur lebar kolom agar rapi
+                const wscols = [
+                    {wch: 5},  // No
+                    {wch: 25}, // Nomor KK
+                    {wch: 30}, // Nama Lengkap
+                    {wch: 15}, // Tanggal Lahir
+                    {wch: 40}, // Alamat
+                    {wch: 15}, // No HP
+                    {wch: 15}, // Jabatan
+                    {wch: 10}, // Status
+                    {wch: 15}, // Kategori
+                    {wch: 15}, // Status Keluarga
+                    {wch: 12}, // Jumlah Anak
+                    {wch: 50}, // Detail Anak
+                    {wch: 20}  // Tanggal Bergabung
+                ];
+                ws['!cols'] = wscols;
+
+                // 3. Buat Workbook dan tambahkan Worksheet
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Data Anggota");
+
+                // 4. Generate nama file dengan tanggal hari ini
+                const today = new Date();
+                const dateStr = today.getFullYear() + '-' + 
+                               String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                               String(today.getDate()).padStart(2, '0');
+                const fileName = `Data_Anggota_Girsang_${dateStr}.xlsx`;
+
+                // 5. Download file
+                XLSX.writeFile(wb, fileName);
+
+                showToast('success', 'Export Berhasil', `File ${fileName} berhasil diunduh.`);
+
+            } catch (error) {
+                console.error("Export Excel Error:", error);
+                showToast('error', 'Gagal Export', 'Terjadi kesalahan saat membuat file Excel.');
+            }
+        }
+
+        function exportToPDF() {
+            if (members.length === 0) {
+                showToast('warning', 'Tidak Ada Data', 'Tidak ada data anggota untuk diexport.');
+                return;
+            }
+
+            try {
+                showToast('info', 'Memproses', 'Sedang membuat file PDF...');
+                
+                const { jsPDF } = window.jspdf;
+                // Gunakan mode landscape (A4: 297mm x 210mm)
+                const doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4'
+                }); 
+
+                // --- HEADER DOKUMEN ---
+                doc.setFontSize(18);
+                doc.setTextColor(44, 62, 80); // #2c3e50
+                doc.text('Girsang Boru Panagolan Tangerang', 14, 15);
+                
+                doc.setFontSize(12);
+                doc.setTextColor(100);
+                doc.text('Laporan Data Anggota', 14, 22);
+                
+                doc.setFontSize(10);
+                const dateStr = new Date().toLocaleString('id-ID');
+                doc.text(`Dicetak pada: ${dateStr}`, 14, 28);
+                doc.text(`Total Anggota: ${members.length}`, 283, 28, { align: 'right' }); // Adjusted align position
+
+                // --- PERSIAPAN DATA TABEL ---
+                const tableColumn = ["No", "Nama", "No KK", "Tgl Lahir", "Alamat", "No HP", "Jabatan", "Status", "Kategori"];
+                const tableRows = [];
+
+                members.forEach((member, index) => {
+                    const parsed = parseNomorKK(member.no_kep);
+                    const memberData = [
+                        index + 1,
+                        member.nama || '-',
+                        member.no_kep || '-',
+                        formatDate(member.tgl_lahir),
+                        member.alamat || '-',
+                        member.no_hp || '-',
+                        member.jabatan || 'Anggota',
+                        member.status === 'aktif' ? 'Aktif' : 'Nonaktif',
+                        parsed ? formatKategori(parsed.kategori) : '-'
+                    ];
+                    tableRows.push(memberData);
+                });
+
+                // --- GENERATE TABEL ---
+                doc.autoTable({
+                    head: [tableColumn],
+                    body: tableRows,
+                    startY: 35,
+                    theme: 'grid',
+                    margin: { top: 35, right: 14, bottom: 20, left: 14 },
+                    styles: { 
+                        fontSize: 8, 
+                        cellPadding: 2,
+                        overflow: 'linebreak',
+                        valign: 'middle'
+                    },
+                    headStyles: { 
+                        fillColor: [52, 152, 219], // #3498db
+                        textColor: 255,
+                        fontStyle: 'bold',
+                        halign: 'center'
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 10, halign: 'center' }, // No
+                        1: { cellWidth: 40 }, // Nama
+                        2: { cellWidth: 35 }, // No KK
+                        3: { cellWidth: 20, halign: 'center' }, // Tgl Lahir
+                        4: { cellWidth: 'auto' }, // Alamat (Auto width to fill remaining space)
+                        5: { cellWidth: 25 }, // No HP
+                        6: { cellWidth: 25 }, // Jabatan
+                        7: { cellWidth: 20, halign: 'center' }, // Status
+                        8: { cellWidth: 25, halign: 'center' }  // Kategori
+                    },
+                    alternateRowStyles: { 
+                        fillColor: [248, 249, 250] // #f8f9fa
+                    },
+                    didDrawPage: function (data) {
+                        // Footer di setiap halaman
+                        const pageCount = doc.internal.getNumberOfPages();
+                        doc.setFontSize(8);
+                        doc.setTextColor(150);
+                        doc.text(
+                            'Halaman ' + pageCount,
+                            doc.internal.pageSize.width - 20,
+                            doc.internal.pageSize.height - 10,
+                            { align: 'right' }
+                        );
+                    }
+                });
+
+                // --- SIMPAN FILE ---
+                const today = new Date();
+                const fileDate = today.getFullYear() + '-' + 
+                               String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                               String(today.getDate()).padStart(2, '0');
+                const fileName = `Data_Anggota_Girsang_${fileDate}.pdf`;
+                
+                doc.save(fileName);
+
+                showToast('success', 'Export Berhasil', `File ${fileName} berhasil diunduh.`);
+
+            } catch (error) {
+                console.error("Export PDF Error:", error);
+                showToast('error', 'Gagal Export', 'Terjadi kesalahan saat membuat file PDF: ' + error.message);
+            }
+        }
+
         function exportAttendance() { showToast('info', 'Export', 'Fitur export kehadiran akan segera hadir.'); }
         
         function showImportModal() { document.getElementById('importModal').style.display = 'flex'; }
@@ -3305,14 +3499,430 @@
         function nextStep() {}
         function startImport() {}
         
-        function generateMemberReport() { document.getElementById('memberReportModal').style.display = 'flex'; }
         function closeMemberReportModal() { document.getElementById('memberReportModal').style.display = 'none'; }
-        function printMemberReport() { window.print(); }
         
-        function generateFamilyHierarchyReport() { showToast('info', 'Laporan', 'Laporan Keluarga dihasilkan.'); }
-        function generateAttendanceReport() { showToast('info', 'Laporan', 'Laporan Kehadiran dihasilkan.'); }
-        function generateFinancialReport() { showToast('info', 'Laporan', 'Laporan Keuangan dihasilkan.'); }
-        function printAllReports() { window.print(); }
+        function printElement(element) {
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Cetak Laporan</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        th { background: #f8f9fa; padding: 8px; border: 1px solid #ddd; text-align: left; }
+                        td { padding: 8px; border: 1px solid #ddd; }
+                        h2, h3 { text-align: center; color: #2c3e50; }
+                    </style>
+                </head>
+                <body>
+                    ${element.innerHTML}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+        }
+
+        function printMemberReport() { 
+            printElement(document.querySelector('#memberReportModal .print-section')); 
+        }
+        
+        function showDynamicReport(title, subtitle, content) {
+            const modal = document.getElementById('memberReportModal');
+            const printSection = modal.querySelector('.print-section');
+            
+            // Set Header Laporan
+            printSection.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+                    <h2 style="margin:0; color:#2c3e50;">Girsang Boru Panagolan Tangerang</h2>
+                    <h3 style="margin:5px 0; color:#34495e;">${title}</h3>
+                    <p style="margin:0; color:#7f8c8d; font-size:14px;">${subtitle}</p>
+                </div>
+                <div id="reportContentArea">${content}</div>
+                <div style="margin-top: 30px; text-align: right; font-size: 12px; color: #95a5a6;">
+                    Dicetak pada: ${new Date().toLocaleString('id-ID')}
+                </div>
+            `;
+            
+            modal.querySelector('.modal-header h3').innerText = title;
+            modal.style.display = 'flex';
+        }
+
+        function generateMemberReport() {
+            let html = `<table style="width:100%; border-collapse: collapse; font-size:12px;">
+                <thead>
+                    <tr style="background:#f1f2f6;">
+                        <th style="padding:8px; border:1px solid #ddd;">No</th>
+                        <th style="padding:8px; border:1px solid #ddd;">Nama</th>
+                        <th style="padding:8px; border:1px solid #ddd;">No KK</th>
+                        <th style="padding:8px; border:1px solid #ddd;">Status</th>
+                    </tr>
+                </thead><tbody>`;
+            
+            members.forEach((m, i) => {
+                html += `<tr>
+                    <td style="padding:8px; border:1px solid #ddd; text-align:center;">${i+1}</td>
+                    <td style="padding:8px; border:1px solid #ddd;">${m.nama}</td>
+                    <td style="padding:8px; border:1px solid #ddd;">${m.no_kep || '-'}</td>
+                    <td style="padding:8px; border:1px solid #ddd;">${m.status || '-'}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            
+            showDynamicReport('Laporan Data Anggota', `Total: ${members.length} Anggota`, html);
+        }
+
+        function generateFamilyHierarchyReport() {
+            const families = {};
+            
+            members.forEach(m => {
+                const parts = m.no_kep ? m.no_kep.split('-') : [];
+                const familyId = parts.length >= 4 ? parts[3] : 'LAINNYA'; 
+                
+                if (!families[familyId]) families[familyId] = [];
+                families[familyId].push(m);
+            });
+
+            let html = '<div style="font-family: monospace;">';
+            
+            Object.keys(families).sort().forEach(famId => {
+                const famMembers = families[famId];
+                famMembers.sort((a, b) => {
+                    const statusA = a.no_kep.split('-')[2] || 'Z';
+                    const statusB = b.no_kep.split('-')[2] || 'Z';
+                    return statusA.localeCompare(statusB); 
+                });
+
+                const head = famMembers.find(m => m.no_kep.includes('-S-')) || famMembers[0];
+                html += `<div style="background:#f8f9fa; padding:15px; margin-bottom:15px; border-radius:8px; border-left: 4px solid #3498db;">`;
+                html += `<strong style="font-size:14px; color:#2c3e50;">Keluarga #${famId} - ${head.nama}</strong>`;
+                html += `<ul style="list-style:none; padding-left:20px; margin-top:10px;">`;
+                
+                famMembers.forEach(m => {
+                    const parts = m.no_kep.split('-')[2] || '?';
+                    let role = parts === 'S' ? 'Suami' : parts === 'I' ? 'Istri' : parts.startsWith('A') ? 'Anak' : 'Anggota';
+                    html += `<li style="margin-bottom:5px;">${role}: <strong>${m.nama}</strong> <span style="color:#7f8c8d; font-size:12px;">(${m.status})</span>`;
+                    
+                    if (m.children && m.children.length > 0) {
+                        html += `<ul style="margin-top:5px; border-left:2px solid #bdc3c7; padding-left:10px;">`;
+                        m.children.forEach(c => {
+                            html += `<li>👶 ${c.nama} (${c.jenis_kelamin || '-'})</li>`;
+                        });
+                        html += `</ul>`;
+                    }
+                    html += `</li>`;
+                });
+                html += `</ul></div>`;
+            });
+            
+            html += '</div>';
+            
+            showDynamicReport('Laporan Hierarki Keluarga', `Total Keluarga: ${Object.keys(families).length}`, html);
+        }
+
+        function generateAttendanceReport() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            const filtered = attendance.filter(a => {
+                const d = new Date(a.date);
+                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            });
+
+            const stats = { hadir: 0, sakit: 0, izin: 0, alfa: 0 };
+            filtered.forEach(a => {
+                if(stats[a.status] !== undefined) stats[a.status]++;
+            });
+
+            let html = `
+                <div style="display:flex; gap:10px; margin-bottom:20px; justify-content:center;">
+                    <div style="background:#d4edda; padding:10px; border-radius:5px;">Hadir: ${stats.hadir}</div>
+                    <div style="background:#fff3cd; padding:10px; border-radius:5px;">Sakit: ${stats.sakit}</div>
+                    <div style="background:#d1ecf1; padding:10px; border-radius:5px;">Izin: ${stats.izin}</div>
+                    <div style="background:#f8d7da; padding:10px; border-radius:5px;">Alfa: ${stats.alfa}</div>
+                </div>
+                <table style="width:100%; border-collapse: collapse; font-size:12px;">
+                <thead>
+                    <tr style="background:#f1f2f6;">
+                        <th style="padding:8px; border:1px solid #ddd;">Tanggal</th>
+                        <th style="padding:8px; border:1px solid #ddd;">Nama</th>
+                        <th style="padding:8px; border:1px solid #ddd;">Status</th>
+                        <th style="padding:8px; border:1px solid #ddd;">Ket</th>
+                    </tr>
+                </thead><tbody>`;
+            
+            filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(a => {
+                html += `<tr>
+                    <td style="padding:8px; border:1px solid #ddd;">${formatDate(a.date)}</td>
+                    <td style="padding:8px; border:1px solid #ddd;">${a.memberName}</td>
+                    <td style="padding:8px; border:1px solid #ddd;">${a.status}</td>
+                    <td style="padding:8px; border:1px solid #ddd;">${a.note || '-'}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            showDynamicReport('Laporan Kehadiran', `Periode: ${monthNames[currentMonth]} ${currentYear}`, html);
+        }
+
+        function generateFinancialReport() {
+            if (typeof showFinanceReport === 'function') {
+                showFinanceReport();
+            } else {
+                let html = `<p style="text-align:center; padding:20px;">Silakan gunakan tombol "Laporan" di Tab Keuangan untuk fitur lengkap.</p>`; 
+                showDynamicReport('Laporan Keuangan', 'Ringkasan', html);
+            }
+        }
+        
+        function printAllReports() {
+            const now = new Date();
+            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                               'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            const currentMonthName = monthNames[now.getMonth()];
+            const currentYear = now.getFullYear();
+
+            // --- 1. DATA ANGGOTA ---
+            let membersHtml = `<table style="width:100%; border-collapse: collapse; font-size:11px;">
+                <thead>
+                    <tr style="background:#f1f2f6;">
+                        <th style="padding:5px; border:1px solid #ddd;">No</th>
+                        <th style="padding:5px; border:1px solid #ddd;">Nama</th>
+                        <th style="padding:5px; border:1px solid #ddd;">No KK</th>
+                        <th style="padding:5px; border:1px solid #ddd;">Alamat</th>
+                        <th style="padding:5px; border:1px solid #ddd;">No HP</th>
+                        <th style="padding:5px; border:1px solid #ddd;">Status</th>
+                    </tr>
+                </thead><tbody>`;
+            
+            // Sort members alphabetically
+            const sortedMembers = [...members].sort((a, b) => (a.nama || '').localeCompare(b.nama || ''));
+            
+            sortedMembers.forEach((m, i) => {
+                membersHtml += `<tr>
+                    <td style="padding:5px; border:1px solid #ddd; text-align:center;">${i+1}</td>
+                    <td style="padding:5px; border:1px solid #ddd;"><strong>${m.nama}</strong></td>
+                    <td style="padding:5px; border:1px solid #ddd;">${m.no_kep || '-'}</td>
+                    <td style="padding:5px; border:1px solid #ddd;">${m.alamat || '-'}</td>
+                    <td style="padding:5px; border:1px solid #ddd;">${m.no_hp || '-'}</td>
+                    <td style="padding:5px; border:1px solid #ddd;">${m.status === 'aktif' ? '<span style="color:green">Aktif</span>' : '<span style="color:red">Nonaktif</span>'}</td>
+                </tr>`;
+            });
+            membersHtml += '</tbody></table>';
+
+            // --- 2. HIERARKI KELUARGA ---
+            const families = {};
+            members.forEach(m => {
+                const parts = m.no_kep ? m.no_kep.split('-') : [];
+                const familyId = parts.length >= 4 ? parts[3] : 'LAINNYA'; 
+                if (!families[familyId]) families[familyId] = [];
+                families[familyId].push(m);
+            });
+
+            let familyHtml = '';
+            Object.keys(families).sort().forEach(famId => {
+                const famMembers = families[famId];
+                // Sort Priority: Suami, Istri, Anak...
+                famMembers.sort((a, b) => {
+                     const statusA = a.no_kep ? a.no_kep.split('-')[2] : 'Z';
+                     const statusB = b.no_kep ? b.no_kep.split('-')[2] : 'Z';
+                     const map = { 'S': 1, 'I': 2 };
+                     const valA = map[statusA] || (statusA.startsWith('A') ? 3 : 4);
+                     const valB = map[statusB] || (statusB.startsWith('A') ? 3 : 4);
+                     if(valA !== valB) return valA - valB;
+                     return (a.nama || '').localeCompare(b.nama || '');
+                });
+
+                const head = famMembers.find(m => m.no_kep && m.no_kep.includes('-S-')) || famMembers[0];
+                familyHtml += `<div style="margin-bottom:10px; break-inside: avoid; border: 1px solid #eee; border-radius: 5px; padding: 5px;">
+                    <div style="background:#f8f9fa; padding:5px; font-weight:bold; font-size:12px; border-bottom: 1px solid #eee;">
+                        Keluarga #${famId} - ${head.nama}
+                    </div>
+                    <ul style="margin:5px 0; padding-left:20px; font-size:11px; list-style-type: none;">`;
+                
+                famMembers.forEach(m => {
+                     const parts = m.no_kep ? m.no_kep.split('-') : [];
+                     const code = parts[2] || '?';
+                     let roleIcon = code === 'S' ? '👨' : code === 'I' ? '👩' : '👶';
+                     let role = code === 'S' ? 'Kepala Keluarga' : code === 'I' ? 'Istri' : code.startsWith('A') ? 'Anak' : 'Anggota';
+                     
+                     familyHtml += `<li style="margin-bottom: 2px;">${roleIcon} <strong>${m.nama}</strong> <span style="color:#777; font-size:10px;">(${role})</span>`;
+                     
+                     // Show children if stored in children array
+                     if (m.children && m.children.length > 0) {
+                        familyHtml += `<ul style="margin-top:2px; padding-left:15px; border-left: 2px solid #ddd; list-style:none;">`;
+                        m.children.forEach(c => {
+                             familyHtml += `<li style="font-size:10px; color:#555;">▪ ${c.nama} (${c.jenis_kelamin || '-'})</li>`;
+                        });
+                        familyHtml += `</ul>`;
+                     }
+                     familyHtml += `</li>`;
+                });
+                familyHtml += `</ul></div>`;
+            });
+
+            // --- 3. LAPORAN KEHADIRAN (Bulan Ini) ---
+            const currentMonthAttendance = attendance.filter(a => {
+                const d = new Date(a.date);
+                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            });
+            currentMonthAttendance.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+            // Stats Kehadiran
+            const attStats = { hadir: 0, sakit: 0, izin: 0, alfa: 0 };
+            currentMonthAttendance.forEach(a => { if(attStats[a.status] !== undefined) attStats[a.status]++; });
+
+            let attendanceHtml = `
+                <div style="font-size:11px; margin-bottom:10px; padding:5px; background:#f9f9f9; border:1px solid #ddd;">
+                    <strong>Ringkasan:</strong> Hadir: ${attStats.hadir} | Sakit: ${attStats.sakit} | Izin: ${attStats.izin} | Alfa: ${attStats.alfa}
+                </div>
+                <table style="width:100%; border-collapse: collapse; font-size:11px;">
+                <thead>
+                    <tr style="background:#f1f2f6;">
+                        <th style="padding:5px; border:1px solid #ddd;">Tanggal</th>
+                        <th style="padding:5px; border:1px solid #ddd;">Nama</th>
+                        <th style="padding:5px; border:1px solid #ddd;">Status</th>
+                        <th style="padding:5px; border:1px solid #ddd;">Ket</th>
+                    </tr>
+                </thead><tbody>`;
+            
+            if (currentMonthAttendance.length === 0) {
+                attendanceHtml += `<tr><td colspan="4" style="padding:10px; text-align:center;">Belum ada data kehadiran bulan ini.</td></tr>`;
+            } else {
+                currentMonthAttendance.forEach(a => {
+                    let color = a.status === 'hadir' ? 'green' : a.status === 'alfa' ? 'red' : 'orange';
+                    attendanceHtml += `<tr>
+                        <td style="padding:5px; border:1px solid #ddd;">${formatDate(a.date)}</td>
+                        <td style="padding:5px; border:1px solid #ddd;">${a.memberName}</td>
+                        <td style="padding:5px; border:1px solid #ddd; color:${color}; font-weight:bold;">${a.status.toUpperCase()}</td>
+                        <td style="padding:5px; border:1px solid #ddd;">${a.note || '-'}</td>
+                    </tr>`;
+                });
+            }
+            attendanceHtml += '</tbody></table>';
+
+            // --- 4. LAPORAN KEUANGAN (Bulan Ini) ---
+            const currentMonthFinance = finance.filter(f => {
+                const d = new Date(f.date);
+                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            });
+            const income = currentMonthFinance.filter(f => f.type === 'pemasukan').reduce((acc, curr) => acc + (parseInt(curr.amount)||0), 0);
+            const expense = currentMonthFinance.filter(f => f.type === 'pengeluaran').reduce((acc, curr) => acc + (parseInt(curr.amount)||0), 0);
+            const balance = income - expense;
+
+            let financeHtml = `
+            <div style="font-size:11px; margin-bottom:10px; padding:5px; background:#f9f9f9; border:1px solid #ddd;">
+                <span style="color:green; margin-right:10px;">Masuk: ${formatCurrency(income)}</span>
+                <span style="color:red; margin-right:10px;">Keluar: ${formatCurrency(expense)}</span>
+                <span style="color:blue; font-weight:bold;">Saldo: ${formatCurrency(balance)}</span>
+            </div>
+            <table style="width:100%; border-collapse: collapse; font-size:11px;">
+                <thead>
+                    <tr style="background:#f1f2f6;">
+                        <th style="padding:5px; border:1px solid #ddd;">Tanggal</th>
+                        <th style="padding:5px; border:1px solid #ddd;">Jenis</th>
+                        <th style="padding:5px; border:1px solid #ddd;">Kategori</th>
+                        <th style="padding:5px; border:1px solid #ddd;">Jumlah</th>
+                        <th style="padding:5px; border:1px solid #ddd;">Ket</th>
+                    </tr>
+                </thead><tbody>`;
+            
+            if (currentMonthFinance.length === 0) {
+                financeHtml += `<tr><td colspan="5" style="padding:10px; text-align:center;">Belum ada transaksi bulan ini.</td></tr>`;
+            } else {
+                currentMonthFinance.sort((a,b) => new Date(b.date) - new Date(a.date));
+                currentMonthFinance.forEach(f => {
+                    const color = f.type === 'pemasukan' ? 'green' : 'red';
+                    financeHtml += `<tr>
+                        <td style="padding:5px; border:1px solid #ddd;">${formatDate(f.date)}</td>
+                        <td style="padding:5px; border:1px solid #ddd; color:${color}; font-weight:bold;">${f.type === 'pemasukan' ? '(+) Masuk' : '(-) Keluar'}</td>
+                        <td style="padding:5px; border:1px solid #ddd;">${f.category}</td>
+                        <td style="padding:5px; border:1px solid #ddd;">${formatCurrency(f.amount)}</td>
+                        <td style="padding:5px; border:1px solid #ddd;">${f.description}</td>
+                    </tr>`;
+                });
+            }
+            financeHtml += '</tbody></table>';
+
+            // --- CONSTRUCT FULL REPORT ---
+            const printContent = `
+                <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 210mm; margin: 0 auto;">
+                    <div style="text-align:center; margin-bottom:30px; border-bottom: 3px solid #2c3e50; padding-bottom: 20px;">
+                        <h1 style="margin:0; color:#2c3e50; font-size: 24px;">Girsang Boru Panagolan Tangerang</h1>
+                        <h2 style="margin:5px 0; font-size: 18px; color: #555;">Laporan Komprehensif Sistem</h2>
+                        <p style="color:#7f8c8d; font-size: 12px; margin-top: 5px;">
+                            Periode: ${currentMonthName} ${currentYear} <br>
+                            Dicetak pada: ${formatDateTime(Date.now())} oleh ${currentUser.username}
+                        </p>
+                    </div>
+
+                    <div class="section">
+                        <h3 style="background:#2c3e50; color:white; padding:5px 10px; border-radius:3px; font-size: 14px;">1. DATA ANGGOTA (${sortedMembers.length})</h3>
+                        ${membersHtml}
+                    </div>
+                    
+                    <div class="page-break"></div>
+
+                    <div class="section">
+                        <h3 style="background:#2c3e50; color:white; padding:5px 10px; border-radius:3px; font-size: 14px;">2. HIERARKI KELUARGA (${Object.keys(families).length} KK)</h3>
+                        <div style="column-count: 2; column-gap: 20px;">
+                            ${familyHtml}
+                        </div>
+                    </div>
+
+                    <div class="page-break"></div>
+
+                    <div class="section">
+                        <h3 style="background:#2c3e50; color:white; padding:5px 10px; border-radius:3px; font-size: 14px;">3. KEHADIRAN BULAN INI</h3>
+                        ${attendanceHtml}
+                    </div>
+
+                    <div class="section" style="margin-top:30px;">
+                        <h3 style="background:#2c3e50; color:white; padding:5px 10px; border-radius:3px; font-size: 14px;">4. KEUANGAN BULAN INI</h3>
+                        ${financeHtml}
+                    </div>
+
+                    <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #aaa; border-top: 1px solid #eee; padding-top: 10px;">
+                        Dokumen ini digenerate otomatis oleh Sistem Manajemen Girsang Boru Panagolan Tangerang.
+                    </div>
+                </div>
+            `;
+
+            // Open Print Window
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Laporan Lengkap - Girsang Boru Panagolan</title>
+                    <style>
+                        body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; }
+                        .page-break { page-break-after: always; display: block; height: 1px; margin: 20px 0; }
+                        .section { margin-bottom: 20px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        td, th { page-break-inside: avoid; }
+                        @media print {
+                            @page { margin: 10mm; size: A4; }
+                            body { -webkit-print-color-adjust: exact; }
+                            .page-break { page-break-after: always; }
+                            .section { break-inside: avoid; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+                printWindow.close();
+            }, 500);
+        }
         
         function showFinanceReport() { document.getElementById('financeReportModal').style.display = 'flex'; }
         function closeFinanceReportModal() { document.getElementById('financeReportModal').style.display = 'none'; }
