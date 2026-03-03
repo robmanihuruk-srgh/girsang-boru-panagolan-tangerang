@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🏛️ Girsang Boru Panagolan Tangerang - Management System</title>
     
-    <!-- STYLESHEET -->
     <style>
         /* RESET & BASE STYLES */
         * {
@@ -961,12 +960,10 @@
     </style>
 </head>
 <body>
-    <!-- 🔥 FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     
-    <!-- EXTERNAL LIBRARIES -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -974,9 +971,7 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-    <!-- MODAL IMPOR -->
     <div id="importModal" class="modal-overlay">
-        <!-- (Konten Modal Import Sama Seperti Sebelumnya) -->
         <div class="modal-box">
             <div class="modal-header">
                 <h3>📁 Import Data Anggota</h3>
@@ -1040,7 +1035,6 @@
         </div>
     </div>
 
-    <!-- MODAL DETAIL ANGGOTA -->
     <div id="detailModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 700px;">
             <div class="modal-header">
@@ -1057,7 +1051,6 @@
         </div>
     </div>
     
-    <!-- MODAL GENERATE QR CODE -->
     <div id="qrCodeModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 400px; text-align: center;">
             <div class="modal-header">
@@ -1077,7 +1070,6 @@
         </div>
     </div>
 
-    <!-- MODAL LAPORAN -->
     <div id="memberReportModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 800px;">
             <div class="modal-header">
@@ -1101,7 +1093,6 @@
         </div>
     </div>
 
-    <!-- MODAL BARCODE SCANNER -->
     <div id="barcodeScannerModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 500px;">
             <div class="modal-header">
@@ -1118,7 +1109,6 @@
         </div>
     </div>
 
-    <!-- MODAL TAMBAH KEHADIRAN (MANUAL CHECKIN - MODIFIED) -->
     <div id="attendanceModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 600px;">
             <div class="modal-header">
@@ -1126,7 +1116,6 @@
                 <div class="modal-close" onclick="closeAttendanceModal()">×</div>
             </div>
             <div class="modal-body">
-                <!-- SEARCH SECTION -->
                 <div class="form-group" id="searchMemberSection">
                     <label>Cari Anggota (Nama / No KK)</label>
                     <div style="position: relative;">
@@ -1135,7 +1124,6 @@
                     </div>
                 </div>
 
-                <!-- SELECTED MEMBER DISPLAY -->
                 <div id="selectedMemberInfo" style="background: #e8f4fc; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; border-left: 5px solid #3498db;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div>
@@ -1175,7 +1163,6 @@
         </div>
     </div>
 
-    <!-- MODAL TAMBAH TRANSAKSI KEUANGAN -->
     <div id="financeModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 600px;">
             <div class="modal-header">
@@ -1224,7 +1211,6 @@
         </div>
     </div>
 
-    <!-- MODAL TAMBAH PENGGUNA -->
     <div id="userModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 500px;">
             <div class="modal-header">
@@ -1263,7 +1249,6 @@
         </div>
     </div>
     
-    <!-- MODAL RESET PASSWORD (ADMIN TO USER) -->
     <div id="resetPasswordModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 400px;">
             <div class="modal-header">
@@ -1285,7 +1270,6 @@
         </div>
     </div>
 
-    <!-- MODAL FORGOT PASSWORD (ADMIN RECOVERY) -->
     <div id="forgotPasswordModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 400px;">
             <div class="modal-header">
@@ -1306,7 +1290,6 @@
         </div>
     </div>
 
-    <!-- MODAL LAPORAN KEUANGAN -->
     <div id="financeReportModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 900px;">
             <div class="modal-header">
@@ -1343,7 +1326,6 @@
         </div>
     </div>
 
-    <!-- MODAL SYSTEM INFO -->
     <div id="systemInfoModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 600px;">
             <div class="modal-header">
@@ -1362,7 +1344,6 @@
         </div>
     </div>
 
-    <!-- MODAL BATCH OPERATIONS -->
     <div id="batchModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 500px;">
             <div class="modal-header">
@@ -1391,7 +1372,6 @@
         </div>
     </div>
 
-    <!-- LOGIN PAGE -->
     <div id="loginPage" class="login-container">
         <div class="login-box">
             <div class="login-logo">
@@ -1414,12 +1394,10 @@
                 🔐 Login
             </button>
             
-            <!-- Forgot Password Link -->
             <div style="margin-top: 15px;">
                 <a href="#" onclick="showForgotPasswordModal()" style="font-size: 13px; color: #3498db; text-decoration: none;">Lupa Password?</a>
             </div>
 
-            <!-- Default login hidden -->
             <div style="margin-top: 20px; font-size: 12px; color: #666; display: none;">
                 <p>Default login:</p>
                 <p><strong>Admin:</strong> admin / admin123</p>
@@ -1428,9 +1406,7 @@
         </div>
     </div>
 
-    <!-- MAIN APPLICATION -->
     <div id="app" class="container" style="display: none;">
-        <!-- HEADER -->
         <div class="header">
             <div class="logo-section">
                 <div class="logo">
@@ -1454,7 +1430,6 @@
             </div>
         </div>
         
-        <!-- NAVIGATION TABS -->
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
             <button class="tab-btn" onclick="switchTab('members')">👥 Anggota</button>
@@ -1465,9 +1440,7 @@
             <button class="tab-btn" onclick="showSystemInfoModal()">ℹ️ Sistem</button>
         </div>
         
-        <!-- MAIN CONTENT -->
         <div class="main-content">
-            <!-- DASHBOARD TAB -->
             <div id="dashboard" class="tab-content active">
                 <h2>📊 Dashboard Utama</h2>
                 <div class="dashboard-grid">
@@ -1493,7 +1466,6 @@
                     </div>
                 </div>
                 
-                <!-- CHARTS -->
                 <div class="form-row">
                     <div class="chart-container">
                         <div class="chart-title">Distribusi Kategori</div>
@@ -1533,7 +1505,6 @@
                 </div>
             </div>
             
-            <!-- MEMBERS TAB -->
             <div id="members" class="tab-content">
                 <div class="table-header">
                     <h3>👥 Data Anggota</h3>
@@ -1577,7 +1548,6 @@
                 </div>
             </div>
             
-            <!-- ATTENDANCE TAB -->
             <div id="attendance" class="tab-content">
                 <div class="table-header">
                     <h3>📅 Data Kehadiran</h3>
@@ -1614,7 +1584,6 @@
                 </div>
             </div>
             
-            <!-- FINANCE TAB -->
             <div id="finance" class="tab-content">
                 <div class="table-header">
                     <h3>💰 Data Keuangan</h3>
@@ -1658,7 +1627,6 @@
                 </div>
             </div>
             
-            <!-- REPORTS TAB -->
             <div id="reports" class="tab-content">
                 <div class="table-header">
                     <h3>📈 Laporan & Analisis</h3>
@@ -1720,7 +1688,6 @@
                 </div>
             </div>
             
-            <!-- USERS TAB -->
             <div id="users" class="tab-content">
                 <div class="table-header">
                     <h3>🔧 Manajemen Pengguna</h3>
@@ -1746,7 +1713,6 @@
         </div>
     </div>
 
-    <!-- MODAL FORM DENGAN DATA ANAK -->
     <div id="memberModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-header">
@@ -1754,7 +1720,6 @@
                 <div class="modal-close" onclick="closeMemberModal()">×</div>
             </div>
             <div class="modal-body">
-                <!-- INFO FORMAT NOMOR KK -->
                 <div class="kk-info">
                     <h4>📋 Format Nomor KK:</h4>
                     <div class="kk-format">
@@ -1818,7 +1783,6 @@
                     </div>
                 </div>
                 
-                <!-- SECTION DATA ANAK -->
                 <div class="children-section">
                     <div class="children-header">
                         <h4>👶 Data Anak-Anak</h4>
@@ -1827,7 +1791,6 @@
                         </button>
                     </div>
                     <div class="children-list" id="childrenList">
-                        <!-- Data anak akan ditambahkan di sini -->
                         <div class="no-children" style="text-align: center; color: #666; padding: 20px;">
                             Belum ada data anak. Klik "Tambah Anak" untuk menambahkan.
                         </div>
@@ -1843,10 +1806,8 @@
         </div>
     </div>
 
-    <!-- TOAST CONTAINER -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- SCRIPT UTAMA -->
     <script>
         // ==================== KONFIGURASI FIREBASE ====================
         const firebaseConfig = {
@@ -2746,16 +2707,29 @@
         function renderMembersTable() {
             const tbody = document.getElementById('membersTable');
             tbody.innerHTML = '';
+            
             if (members.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">Belum ada data anggota.</td></tr>`;
                 return;
             }
+            
             members.forEach((member, index) => {
                 const tr = document.createElement('tr');
                 const parsed = parseNomorKK(member.no_kep);
+                
+                // Menyiapkan string nama anak untuk disisipkan agar terbaca oleh fitur pencarian
+                let childrenNamesStr = '';
+                if (member.children && member.children.length > 0) {
+                    childrenNamesStr = member.children.map(c => c.nama).join(' ');
+                }
+
                 tr.innerHTML = `
                     <td>${index + 1}</td>
-                    <td><strong>${member.nama || '-'}</strong>${member.no_kep ? `<br><small style="color:#666;">${member.no_kep}</small>` : ''}</td>
+                    <td>
+                        <strong>${member.nama || '-'}</strong>
+                        ${member.no_kep ? `<br><small style="color:#666;">${member.no_kep}</small>` : ''}
+                        <span style="display:none;">${childrenNamesStr}</span>
+                    </td>
                     <td>${member.tgl_lahir ? formatDate(member.tgl_lahir) : '-'}</td>
                     <td>${member.alamat ? (member.alamat.length > 25 ? member.alamat.substring(0, 25) + '...' : member.alamat) : '-'}</td>
                     <td>${member.no_hp || '-'}</td>
@@ -2813,6 +2787,10 @@
             detailHtml += `</div>`;
             document.getElementById('detailContent').innerHTML = detailHtml;
             document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').style.display = 'none';
         }
 
         function addChildField(childData = {}) {
