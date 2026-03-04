@@ -1,255 +1,141 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Management System & Ucapan - TGBP Tangerang</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Playfair+Display:ital,wght@1,500&display=swap" rel="stylesheet">
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+// ==================== MODIFIKASI FUNGSI SISTEM (BACKUP, RESTORE, REFRESH) ====================
 
-    <style>
-        :root {
-            --deep-blue: #0f2027;
-            --mid-blue: #203a43;
-            --silver: #c0c0c0;
-            --gold-accent: #ffd700;
-            --danger: #e74c3c;
-            --success: #2ecc71;
-            --info: #3498db;
-        }
-
-        body {
-            margin: 0; padding: 0; min-height: 100vh;
-            font-family: 'Montserrat', sans-serif;
-            background: linear-gradient(to right, var(--deep-blue), var(--mid-blue));
-            color: white;
-            display: flex; flex-direction: column; align-items: center;
-            overflow-x: hidden;
-        }
-
-        /* --- STYLE KARTU UCAPAN (ASLI) --- */
-        .card-frame {
-            width: 90%; max-width: 500px; height: 70vh;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            position: relative; margin-top: 5vh;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 20px; text-align: center;
-        }
-
-        .card-frame::before {
-            content: ''; position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px;
-            border: 2px solid var(--silver); border-radius: 15px; pointer-events: none;
-        }
-
-        .slide { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; animation: fadeIn 1s ease; }
-        .slide.active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-
-        h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--silver); }
-        .age-circle {
-            width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--gold-accent);
-            display: flex; justify-content: center; align-items: center;
-            font-size: 2rem; color: var(--gold-accent); margin: 15px auto;
-        }
-
-        .btn {
-            background: transparent; border: 2px solid var(--silver); color: var(--silver);
-            padding: 8px 25px; border-radius: 30px; cursor: pointer; transition: 0.3s;
-            margin-top: 20px; text-transform: uppercase; letter-spacing: 1px;
-        }
-        .btn:hover { background: var(--silver); color: var(--deep-blue); }
-        .btn-primary { background: var(--gold-accent); border-color: var(--gold-accent); color: var(--deep-blue); font-weight: bold; }
-
-        /* --- STYLE PANEL ADMIN (BARU) --- */
-        .admin-panel {
-            width: 90%; max-width: 800px; margin: 40px 0;
-            background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 15px; }
-        .status-badge { font-size: 12px; padding: 4px 8px; border-radius: 4px; background: var(--info); }
-        .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 15px; }
+// 1. Fungsi Backup Data: Mengunduh seluruh database Firebase ke file JSON
+async function backupData() {
+    try {
+        showToast('info', 'Backup', 'Sedang menyiapkan data...');
         
-        .toast {
-            position: fixed; top: 20px; right: 20px; padding: 15px 25px; 
-            border-radius: 8px; z-index: 9999; display: none; animation: slideIn 0.3s ease;
-        }
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-    </style>
-</head>
-<body>
-
-    <div id="toast" class="toast"></div>
-
-    <audio id="bg-music" loop preload="auto">
-        <source src="happy_birthday.mp3" type="audio/mpeg">
-        <source src="https://upload.wikimedia.org/wikipedia/commons/transcoded/6/61/Happy_Birthday_to_You_-_instrumental.ogg/Happy_Birthday_to_You_-_instrumental.ogg.mp3" type="audio/mpeg">
-    </audio>
-
-    <div class="card-frame">
-        <div class="slide active" id="slide-1">
-            <h1>Kartu Ucapan</h1>
-            <p>Spesial untuk:</p>
-            <h2 id="name-display-1" style="color: var(--gold-accent); font-size: 1.5rem;">[Nama]</h2>
-            <button class="btn btn-primary" onclick="startExperience()">Buka Kartu</button>
-        </div>
-        <div class="slide" id="slide-2">
-            <h1>Selamat Ulang Tahun</h1>
-            <div class="age-circle" id="age-display">XX</div>
-            <p>Tahun Berkat & Penyertaan Tuhan</p>
-            <button class="btn" onclick="nextSlide(3)">Lihat Ayat >> </button>
-        </div>
-        <div class="slide" id="slide-3">
-            <div style="font-style: italic; padding: 0 20px;">
-                "Sebab Aku ini mengetahui rancangan-rancangan apa yang ada pada-Ku mengenai kamu..."
-                <span style="display:block; color:var(--gold-accent); margin-top:10px;">Yeremia 29:11</span>
-            </div>
-            <button class="btn" onclick="nextSlide(4)">Lanjut >> </button>
-        </div>
-        <div class="slide" id="slide-4">
-            <p>Tuhan Yesus Memberkati senantiasa.</p>
-            <p style="font-size: 0.8rem; margin-top:15px;">Salam Kasih,</p>
-            <h3 id="sender-display" style="color: var(--gold-accent);">[Pengirim]</h3>
-            <button class="btn" onclick="nextSlide(1)">Ulangi</button>
-        </div>
-    </div>
-
-    <div class="admin-panel">
-        <div class="admin-header">
-            <span>⚙️ Girsang Management System - Admin</span>
-            <span id="db-status" class="status-badge">Menghubungkan...</span>
-        </div>
-        
-        <div id="systemInfoContent">
-            <p style="font-size: 0.9rem; opacity: 0.8;">Versi: 2.0 | Pengguna: admin</p>
-        </div>
-
-        <div class="admin-grid">
-            <button class="btn" onclick="backupData()" style="background: #2c3e50; font-size: 12px;">💾 Backup Data</button>
-            <button class="btn" onclick="showRestoreDialog()" style="background: #2c3e50; font-size: 12px;">📤 Restore Data</button>
-            <button class="btn" onclick="refreshSystemInfo()" style="background: var(--info); font-size: 12px; color: white;">🔄 Refresh Info</button>
-        </div>
-    </div>
-
-    <script>
-        // --- 1. CONFIG FIREBASE (Robert: Ganti dengan config Firebase Anda agar fungsi Backup jalan) ---
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_ID",
-            appId: "YOUR_APP_ID"
-        };
-        
-        // Inisialisasi Firebase jika config sudah diisi
-        if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
-            firebase.initializeApp(firebaseConfig);
-            var db = firebase.database();
-            document.getElementById('db-status').innerText = "Terhubung ke Firebase";
-            document.getElementById('db-status').style.background = "var(--success)";
-        }
-
-        // --- 2. LOGIKA KARTU UCAPAN (ASLI) ---
-        const config = {
-            nama: "St. AW Girsang",
-            umur: " ",
-            pengirim: "Tuppuan Girsang Boru Panagolan"
+        // Ambil semua data utama dari variabel global yang sudah tersinkron dengan Firebase
+        const fullBackup = {
+            metadata: {
+                appName: "Girsang Boru Panagolan Tangerang - Management System",
+                version: "2.0",
+                backupDate: new Date().toISOString(),
+                backupBy: currentUser.username
+            },
+            members: members,
+            attendance: attendance,
+            finance: finance,
+            users: users
         };
 
-        document.getElementById('name-display-1').innerText = config.nama;
-        document.getElementById('age-display').innerText = config.umur;
-        document.getElementById('sender-display').innerText = config.pengirim;
+        // Konversi ke string JSON
+        const dataStr = JSON.stringify(fullBackup, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
 
-        const music = document.getElementById('bg-music');
+        // Buat nama file dengan timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const exportFileDefaultName = `Backup_Girsang_System_${timestamp}.json`;
 
-        function startExperience() {
-            attemptPlayMusic();
-            nextSlide(2);
-        }
+        // Trigger download
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
 
-        function attemptPlayMusic() {
-            music.volume = 1.0; 
-            music.muted = false;
-            music.play().catch(e => console.log("Autoplay block"));
-        }
+        showToast('success', 'Backup Berhasil', `File ${exportFileDefaultName} telah diunduh.`);
+    } catch (error) {
+        console.error("Backup Error:", error);
+        showToast('error', 'Backup Gagal', 'Terjadi kesalahan saat memproses backup.');
+    }
+}
 
-        function nextSlide(slideIndex) {
-            document.querySelectorAll('.slide').forEach(el => el.classList.remove('active'));
-            document.getElementById('slide-' + slideIndex).classList.add('active');
-        }
+// 2. Fungsi Restore Data: Membaca file JSON dan menuliskannya kembali ke Firebase
+function showRestoreDialog() {
+    // Buat input file secara dinamis
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
 
-        // --- 3. LOGIKA BACKUP, RESTORE & REFRESH (TAMBAHAN) ---
-        
-        function showToast(type, title, msg) {
-            const t = document.getElementById('toast');
-            t.style.display = 'block';
-            t.style.background = type === 'success' ? 'var(--success)' : (type === 'error' ? 'var(--danger)' : 'var(--info)');
-            t.innerHTML = `<strong>${title}</strong><br>${msg}`;
-            setTimeout(() => { t.style.display = 'none'; }, 3000);
-        }
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-        async function backupData() {
-            if (typeof db === 'undefined') return alert("Firebase belum dikonfigurasi!");
+        const reader = new FileReader();
+        reader.readAsText(file, 'UTF-8');
+
+        reader.onload = async readerEvent => {
             try {
-                showToast('info', 'Backup', 'Mengambil data...');
-                const snapshot = await db.ref('/').once('value');
-                const data = snapshot.val();
+                const content = JSON.parse(readerEvent.target.result);
                 
-                const blob = new Blob([JSON.stringify({
-                    metadata: { version: "2.0", date: new Date().toISOString(), source: "TGBP_Tangerang" },
-                    database: data
-                }, null, 2)], {type : 'application/json'});
+                // Validasi struktur file backup
+                if (!content.members || !content.attendance || !content.finance) {
+                    throw new Error("Format file backup tidak valid.");
+                }
+
+                if (!confirm(`⚠️ PERINGATAN: Restore akan menimpa data saat ini dengan data dari cadangan tanggal ${new Date(content.metadata.backupDate).toLocaleString()}. Lanjutkan?`)) {
+                    return;
+                }
+
+                showToast('info', 'Restore', 'Sedang memproses data ke Firebase...');
+
+                // Restore setiap node ke Firebase
+                await db.ref('members').set(mapArrayToFirebase(content.members));
+                await db.ref('attendance').set(mapArrayToFirebase(content.attendance));
+                await db.ref('finance').set(mapArrayToFirebase(content.finance));
                 
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `Backup_TGBP_${new Date().toISOString().split('T')[0]}.json`;
-                a.click();
-                showToast('success', 'Berhasil', 'Data cadangan diunduh.');
-            } catch (e) { showToast('error', 'Gagal', e.message); }
-        }
+                // Khusus users, opsional jika ingin direstore juga (hati-hati bisa merubah akses login saat ini)
+                if (content.users && confirm("Apakah Anda juga ingin merestore data Pengguna/Admin?")) {
+                    await db.ref('users').set(mapArrayToFirebase(content.users));
+                }
 
-        function showRestoreDialog() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = e => {
-                const file = e.target.files[0];
-                const reader = new FileReader();
-                reader.onload = async event => {
-                    try {
-                        const content = JSON.parse(event.target.result);
-                        if(confirm("Timpa data database saat ini dengan data dari file backup?")) {
-                            await db.ref('/').set(content.database);
-                            showToast('success', 'Restore Berhasil', 'Aplikasi akan dimuat ulang.');
-                            setTimeout(() => location.reload(), 1500);
-                        }
-                    } catch (err) { showToast('error', 'Gagal', 'File tidak valid.'); }
-                };
-                reader.readAsText(file);
-            };
-            input.click();
-        }
+                showToast('success', 'Restore Berhasil', 'Database telah diperbarui. Aplikasi akan memuat ulang.');
+                setTimeout(() => location.reload(), 2000);
 
-        function refreshSystemInfo() {
-            showToast('info', 'Update', 'Menyegarkan status...');
-            const now = new Date().toLocaleTimeString();
-            document.getElementById('systemInfoContent').innerHTML = `
-                <p style="font-size: 0.9rem; opacity: 0.8;">
-                    Versi: 2.0 | Pengguna: admin<br>
-                    Terakhir diperbarui: ${now}
-                </p>
-            `;
-        }
+            } catch (error) {
+                console.error("Restore Error:", error);
+                showToast('error', 'Restore Gagal', 'File rusak atau format tidak sesuai: ' + error.message);
+            }
+        };
+    };
 
-    </script>
-</body>
-</html>
+    input.click();
+}
+
+// Helper untuk membersihkan data sebelum dikirim balik ke Firebase (menghapus firebaseKey agar tidak duplikat di dalam objek)
+function mapArrayToFirebase(array) {
+    const obj = {};
+    array.forEach(item => {
+        const key = item.firebaseKey || db.ref().push().key;
+        const cleanItem = { ...item };
+        delete cleanItem.firebaseKey; // Hapus key agar struktur Firebase bersih
+        obj[key] = cleanItem;
+    });
+    return obj;
+}
+
+// 3. Fungsi Refresh Info: Memperbarui tampilan info sistem dan memuat ulang data dari Firebase
+async function showSystemInfo() {
+    const systemInfoContent = document.getElementById('systemInfoContent');
+    
+    // Tampilkan status loading
+    systemInfoContent.innerHTML = `<p style="text-align:center;">🔄 Sedang menyegarkan data...</p>`;
+    
+    // Paksa load ulang data dari Firebase
+    await loadAllData();
+    
+    const now = new Date();
+    const uptime = Math.floor((now - window.appStartTime) / 60000); // dalam menit
+
+    systemInfoContent.innerHTML = `
+        <div class="system-info-grid">
+            <div class="system-info-item">
+                <strong>Versi Aplikasi</strong><br>2.0.0-Stable
+            </div>
+            <div class="system-info-item">
+                <strong>User Aktif</strong><br>${currentUser.username} (${currentUser.role})
+            </div>
+            <div class="system-info-item">
+                <strong>Total Database</strong><br>${members.length} Anggota
+            </div>
+            <div class="system-info-item">
+                <strong>Uptime Sesi</strong><br>${uptime} Menit
+            </div>
+        </div>
+        <div style="margin-top:15px; font-size:12px; color:#666; border-top:1px solid #eee; padding-top:10px;">
+            <p>📍 Lokasi: Tangerang</p>
+            <p>🕒 Last Sync: ${now.toLocaleTimeString()}</p>
+            <p>🗄️ Firebase: Connected (girsangborupanagolantangerang)</p>
+        </div>
+    `;
+}
