@@ -1,0 +1,542 @@
+<!DOCTYPE html>                  
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏛️ Girsang Boru Panagolan Tangerang - Management System</title>
+    
+    <style>
+        /* RESET & BASE STYLES */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        /* HEADER STYLES */
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            color: white;
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 5px solid #3498db;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #3498db;
+            overflow: hidden;
+            padding: 5px;
+        }
+        
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .title-section h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .title-section h2 {
+            font-size: 18px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            text-align: right;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .user-role {
+            font-size: 14px;
+            opacity: 0.8;
+            background: rgba(255,255,255,0.2);
+            padding: 3px 10px;
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        .btn-logout {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-logout:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-online {
+            background: #2ecc71;
+            box-shadow: 0 0 10px #2ecc71;
+        }
+
+        .status-offline {
+            background: #e74c3c;
+            box-shadow: 0 0 10px #e74c3c;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            padding: 0 40px;
+            border-bottom: 2px solid #e9ecef;
+            gap: 5px;
+        }
+
+        .tab-btn {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: #495057;
+            background: #e9ecef;
+        }
+
+        .tab-btn.active {
+            color: #3498db;
+            background: white;
+            border-bottom: 3px solid #3498db;
+        }
+
+        .main-content {
+            padding: 30px 40px;
+            min-height: 600px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card.total { border-left-color: #3498db; }
+        .stat-card.active { border-left-color: #2ecc71; }
+        .stat-card.inactive { border-left-color: #e74c3c; }
+        .stat-card.pending { border-left-color: #f39c12; }
+
+        .stat-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 16px;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h3 {
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .table-tools {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; transform: translateY(-2px); }
+        .btn-success { background: #2ecc71; color: white; }
+        .btn-success:hover { background: #27ae60; transform: translateY(-2px); }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-warning:hover { background: #d35400; transform: translateY(-2px); }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-danger:hover { background: #c0392b; transform: translateY(-2px); }
+        .btn-export { background: #9b59b6; color: white; }
+        .btn-export:hover { background: #8e44ad; transform: translateY(-2px); }
+
+        .table-wrapper { overflow-x: auto; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { background: #f8f9fa; padding: 15px; text-align: left; font-weight: 600; color: #2c3e50; border-bottom: 2px solid #e9ecef; }
+        td { padding: 15px; border-bottom: 1px solid #e9ecef; vertical-align: middle; }
+        tr:hover { background: #f8f9fa; }
+
+        .status-badge { padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
+        .status-aktif { background: #d4edda; color: #155724; }
+        .status-nonaktif { background: #f8d7da; color: #721c24; }
+
+        .action-buttons { display: flex; gap: 5px; flex-wrap: wrap; }
+        .action-btn { width: 35px; height: 35px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.3s; }
+        .action-btn.edit { background: #3498db; color: white; }
+        .action-btn.delete { background: #e74c3c; color: white; }
+        .action-btn.view { background: #2ecc71; color: white; }
+        .action-btn.reset { background: #f39c12; color: white; }
+        .action-btn.qr { background: #34495e; color: white; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
+        .form-control { width: 100%; padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 16px; transition: all 0.3s; }
+        .form-control:focus { border-color: #3498db; outline: none; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-box { background: white; border-radius: 15px; width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto; animation: modalSlideIn 0.3s ease-out; }
+        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-header { background: linear-gradient(135deg, #3498db, #2980b9); color: white; padding: 20px; border-radius: 15px 15px 0 0; display: flex; justify-content: space-between; align-items: center; }
+        .modal-close { font-size: 28px; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.3s; }
+        .modal-body { padding: 30px; }
+        .modal-footer { padding: 20px 30px; border-top: 1px solid #e9ecef; display: flex; justify-content: flex-end; gap: 10px; }
+
+        .search-box { position: relative; margin-bottom: 20px; }
+        .search-input { width: 100%; padding: 12px 45px 12px 15px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 16px; transition: all 0.3s; }
+        .filter-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-btn { padding: 8px 15px; background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .filter-btn.active { background: #3498db; color: white; border-color: #3498db; }
+
+        .login-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .login-box { background: white; border-radius: 20px; padding: 40px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; }
+        .login-logo { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 5px; background: white; border: 2px solid #e9ecef; }
+        .login-logo img { width: 100%; height: 100%; object-fit: contain; }
+        .login-title { font-size: 24px; margin-bottom: 10px; color: #2c3e50; }
+        .login-subtitle { color: #6c757d; margin-bottom: 30px; }
+        .login-box .form-group { position: relative; margin-bottom: 20px; }
+        .login-input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 18px; z-index: 2; }
+        .login-input { width: 100%; padding: 12px 15px 12px 45px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 16px; transition: all 0.3s; background: #f8f9fa; }
+        .btn-login-modern { width: 100%; margin-top: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 12px; border-radius: 10px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; transition: transform 0.2s; display: flex; justify-content: center; align-items: center; gap: 10px; }
+
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 350px; }
+        .toast { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 15px; animation: slideIn 0.3s ease-out; border-left: 5px solid; }
+        .toast.success { border-left-color: #2ecc71; }
+        .toast.error { border-left-color: #e74c3c; }
+        .toast.warning { border-left-color: #f39c12; }
+        .toast.info { border-left-color: #3498db; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+
+        .children-section { background: #f8f9fa; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+        .children-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .child-item { background: white; border-radius: 8px; padding: 15px; border: 1px solid #e9ecef; margin-bottom: 10px; }
+        .child-item-remove { background: #e74c3c; color: white; border: none; width: 25px; height: 25px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-add-child { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+
+        .kk-info { background: #e8f4fc; border-radius: 8px; padding: 15px; margin-bottom: 20px; border-left: 4px solid #3498db; }
+        .kk-format { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center; }
+        .kk-part { background: white; padding: 10px; border-radius: 5px; font-weight: 600; border: 1px solid #3498db; }
+
+        .chart-container { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .chart-wrapper { height: 300px; position: relative; }
+
+        .detail-view { background: #f8f9fa; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+        .detail-row { display: flex; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #e9ecef; }
+        .detail-label { font-weight: 600; width: 150px; color: #2c3e50; }
+        .detail-value { flex: 1; color: #495057; }
+
+        .system-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .system-info-item { background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center; border-left: 4px solid #3498db; }
+    </style>
+</head>
+<body>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <div id="systemInfoModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>ℹ️ Informasi Sistem</h3>
+                <div class="modal-close" onclick="closeSystemInfoModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div id="systemInfoContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="backupData()" class="btn btn-primary" style="background:#8e44ad;">💾 Backup Data</button>
+                <button onclick="showRestoreDialog()" class="btn btn-warning">📥 Restore Data</button>
+                <button onclick="showSystemInfo()" class="btn btn-primary">🔄 Refresh Info</button>
+                <button onclick="closeSystemInfoModal()" class="btn btn-danger">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loginPage" class="login-container">...</div>
+    <div id="app" class="container" style="display: none;">...</div>
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ... (SEMUA KODE JAVASCRIPT ASLI ROBERT DI SINI) ...
+        // (Isi Firebase Config, Variabel Global, Render Table, Login, dll)
+
+        // =====================================================================================
+        // MODIFIKASI FITUR SISTEM: BACKUP, RESTORE, REFRESH (Sesuai Permintaan Robert)
+        // =====================================================================================
+
+        // 1. Fungsi Backup Data: Mengunduh database ke file JSON
+        async function backupData() {
+            try {
+                showToast('info', 'Backup', 'Sedang menyiapkan data...');
+                
+                // Data diambil dari variabel global aplikasi Robert
+                const fullBackup = {
+                    metadata: {
+                        appName: "Girsang Management System",
+                        version: "2.0",
+                        backupDate: new Date().toISOString(),
+                        backupBy: currentUser.username
+                    },
+                    members: members,
+                    attendance: attendance,
+                    finance: finance,
+                    users: users
+                };
+
+                const dataStr = JSON.stringify(fullBackup, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                const fileName = `Backup_Girsang_${timestamp}.json`;
+
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', fileName);
+                linkElement.click();
+
+                showToast('success', 'Backup Berhasil', `File ${fileName} telah diunduh.`);
+            } catch (error) {
+                console.error("Backup Error:", error);
+                showToast('error', 'Backup Gagal', 'Gagal memproses backup data.');
+            }
+        }
+
+        // 2. Fungsi Restore Data: Memasukkan kembali data dari file JSON ke Firebase
+        function showRestoreDialog() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.readAsText(file, 'UTF-8');
+                reader.onload = async readerEvent => {
+                    try {
+                        const content = JSON.parse(readerEvent.target.result);
+                        
+                        // Validasi minimal
+                        if (!content.members || !content.attendance) {
+                            throw new Error("File backup tidak valid.");
+                        }
+
+                        if (!confirm(`⚠️ PERINGATAN: Restore akan menimpa seluruh data saat ini dengan data dari file cadangan. Lanjutkan?`)) return;
+
+                        showToast('info', 'Restore', 'Sedang memulihkan data ke Firebase...');
+
+                        // Fungsi internal untuk memformat ulang data ke Firebase
+                        const toFirebaseObj = (arr) => {
+                            const obj = {};
+                            arr.forEach(item => {
+                                const key = item.firebaseKey || db.ref().push().key;
+                                const clean = { ...item };
+                                delete clean.firebaseKey;
+                                obj[key] = clean;
+                            });
+                            return obj;
+                        };
+
+                        // Update Firebase Nodes
+                        await db.ref('members').set(toFirebaseObj(content.members));
+                        await db.ref('attendance').set(toFirebaseObj(content.attendance));
+                        await db.ref('finance').set(toFirebaseObj(content.finance));
+                        
+                        if (content.users) {
+                            await db.ref('users').set(toFirebaseObj(content.users));
+                        }
+
+                        showToast('success', 'Restore Berhasil', 'Data dipulihkan. Aplikasi akan dimuat ulang.');
+                        setTimeout(() => location.reload(), 2000);
+                    } catch (error) {
+                        showToast('error', 'Restore Gagal', 'Kesalahan file: ' + error.message);
+                    }
+                };
+            };
+            input.click();
+        }
+
+        // 3. Fungsi Refresh Info: Memperbarui tampilan info dan sync data
+        async function showSystemInfo() {
+            const systemInfoContent = document.getElementById('systemInfoContent');
+            systemInfoContent.innerHTML = `<p style="text-align:center;">🔄 Sedang menyegarkan data...</p>`;
+            
+            // Panggil fungsi sinkronisasi asli aplikasi Robert
+            await loadAllData();
+            
+            const now = new Date();
+            const uptime = Math.floor((now - window.appStartTime) / 60000);
+
+            systemInfoContent.innerHTML = `
+                <div class="system-info-grid">
+                    <div class="system-info-item"><strong>Versi</strong><br>2.0.0-Stable</div>
+                    <div class="system-info-item"><strong>User</strong><br>${currentUser.username}</div>
+                    <div class="system-info-item"><strong>Data</strong><br>${members.length} Anggota</div>
+                    <div class="system-info-item"><strong>Uptime</strong><br>${uptime} Menit</div>
+                </div>
+                <div style="margin-top:15px; font-size:12px; color:#666; border-top:1px solid #eee; padding-top:10px;">
+                    <p>📍 Lokasi: Tangerang</p>
+                    <p>🕒 Last Sync: ${now.toLocaleTimeString()}</p>
+                    <p>🗄️ Database: Connected (girsangborupanagolantangerang)</p>
+                </div>
+            `;
+            // Pastikan modal muncul jika fungsi dipanggil dari nav
+            document.getElementById('systemInfoModal').style.display = 'flex';
+        }
+
+        // ... (Penutup event listener dan start up asli Robert) ...
+        window.appStartTime = Date.now();
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthOnLoad();
+        });
+    </script>
+</body>
+</html>
