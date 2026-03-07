@@ -1012,11 +1012,7 @@
                         <div class="import-options">
                             <div class="option-item">
                                 <input type="checkbox" id="overwriteData" checked>
-                                <label for="overwriteData" class="option-label">Timpa data yang sudah ada</label>
-                            </div>
-                            <div class="option-item">
-                                <input type="checkbox" id="autoMapColumns" checked>
-                                <label for="autoMapColumns" class="option-label">Otomatis mapping kolom</label>
+                                <label for="overwriteData" class="option-label">Timpa data yang sudah ada (berdasarkan Nama/No KK)</label>
                             </div>
                         </div>
                         <div id="columnMappingSection" style="display: none; margin-top: 15px;"></div>
@@ -1032,7 +1028,7 @@
                         <div class="import-stats" id="importStats">
                             <div class="stat-item"><div class="stat-value" id="totalRows">0</div><div class="stat-label">Total</div></div>
                             <div class="stat-item"><div class="stat-value" id="validRows">0</div><div class="stat-label">Valid</div></div>
-                            <div class="stat-item"><div class="stat-value" id="duplicateRows">0</div><div class="stat-label">Duplikat</div></div>
+                            <div class="stat-item"><div class="stat-value" id="duplicateRows">0</div><div class="stat-label">Duplikat/Timpa</div></div>
                             <div class="stat-item"><div class="stat-value" id="errorRows">0</div><div class="stat-label">Error</div></div>
                         </div>
                     </div>
@@ -1049,7 +1045,7 @@
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button id="prevBtn" onclick="prevStep()" class="btn btn-warning" style="display: none;">⬅ Kembali</button>
-                    <button id="nextBtn" onclick="nextStep()" class="btn btn-primary" style="flex: 1;">Selanjutnya →</button>
+                    <button id="nextBtn" onclick="nextStep()" class="btn btn-primary" style="flex: 1; display: none;">Selanjutnya →</button>
                     <button id="importBtn" onclick="startImport()" class="btn btn-success" style="display: none; flex: 1;">🚀 Import Data</button>
                     <button id="closeBtn" onclick="closeImportModal()" class="btn btn-danger" style="display: none; flex: 1;">Tutup</button>
                 </div>
@@ -1525,8 +1521,8 @@
                 <div class="table-header">
                     <h3>👥 Data Anggota</h3>
                     <div class="table-tools">
-                        <button onclick="showAddMemberForm()" class="btn btn-success">➕ Tambah Anggota</button>
-                        <button onclick="showImportModal()" class="btn btn-primary">📁 Import Excel</button>
+                        <button onclick="showAddMemberForm()" class="btn btn-success" id="btnAddMember">➕ Tambah Anggota</button>
+                        <button onclick="showImportModal()" class="btn btn-primary" id="btnImportExcel">📁 Import Excel</button>
                         <button onclick="generateFamilyHierarchyReport()" class="btn btn-primary">👨‍👩‍👧‍👦 Laporan Keluarga</button>
                         <button onclick="exportToExcel()" class="btn btn-export">📊 Export Excel</button>
                         <button onclick="exportToPDF()" class="btn btn-warning">📄 Export PDF</button>
@@ -2271,17 +2267,12 @@
                 adminTab.style.display = 'none';
             }
             
-            document.querySelectorAll('button').forEach(btn => {
-                const onclick = btn.getAttribute('onclick');
-                if (onclick) {
-                    if (onclick.includes('showAddMemberForm') || onclick.includes('showImportModal')) {
-                        btn.disabled = !canManageMembers;
-                    }
-                    if (onclick.includes('showAddUserForm')) {
-                        btn.disabled = currentUser.role !== 'admin';
-                    }
-                }
-            });
+            // PERBAIKAN LOGIKA BUTTON DISABLED
+            const btnAddMember = document.getElementById('btnAddMember');
+            if (btnAddMember) btnAddMember.style.display = canManageMembers ? 'inline-flex' : 'none';
+
+            const btnImportExcel = document.getElementById('btnImportExcel');
+            if (btnImportExcel) btnImportExcel.style.display = canManageMembers ? 'inline-flex' : 'none';
         }
 
         async function loadAllData() {
@@ -3598,12 +3589,255 @@
 
         function exportAttendance() { showToast('info', 'Export', 'Fitur export kehadiran akan segera hadir.'); }
         
-        function showImportModal() { document.getElementById('importModal').style.display = 'flex'; }
-        function closeImportModal() { document.getElementById('importModal').style.display = 'none'; }
-        function handleFileSelect(e) { console.log('File selected'); }
-        function prevStep() {}
-        function nextStep() {}
-        function startImport() {}
+        // ==================== FUNGSI IMPORT EXCEL ====================
+        function showImportModal() { 
+            document.getElementById('importModal').style.display = 'flex'; 
+            importCurrentStep = 1;
+            updateImportSteps();
+        }
+        
+        function closeImportModal() { 
+            document.getElementById('importModal').style.display = 'none'; 
+            document.getElementById('fileInput').value = '';
+            importData = null;
+            document.getElementById('selectedFileName').textContent = '';
+            document.getElementById('previewBody').innerHTML = '';
+            document.getElementById('previewHeader').innerHTML = '';
+        }
+        
+        function handleFileSelect(e) { 
+            const file = e.target.files[0] || (e.dataTransfer && e.dataTransfer.files[0]);
+            if (!file) return;
+
+            document.getElementById('selectedFileName').textContent = file.name;
+            showToast('info', 'Membaca File', 'Sedang memproses dokumen Excel...');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // Convert to JSON
+                    const json = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
+                    
+                    if(json.length === 0) {
+                        throw new Error("File Excel kosong");
+                    }
+
+                    importData = json;
+                    document.getElementById('nextBtn').style.display = 'block';
+                    showToast('success', 'File Terbaca', `Ditemukan ${json.length} baris data.`);
+                    
+                } catch(err) {
+                    console.error(err);
+                    showToast('error', 'Gagal Membaca File', 'Pastikan format Excel valid (.xlsx/.csv)');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function updateImportSteps() {
+            document.querySelectorAll('.step-content').forEach((el, index) => {
+                if (index + 1 === importCurrentStep) {
+                    el.classList.add('active-step');
+                } else {
+                    el.classList.remove('active-step');
+                }
+            });
+
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const importBtn = document.getElementById('importBtn');
+            const closeBtn = document.getElementById('closeBtn');
+
+            prevBtn.style.display = importCurrentStep > 1 && importCurrentStep < 3 ? 'block' : 'none';
+            
+            if (importCurrentStep === 1) {
+                nextBtn.style.display = importData ? 'block' : 'none';
+                importBtn.style.display = 'none';
+                closeBtn.style.display = 'none';
+            } else if (importCurrentStep === 2) {
+                nextBtn.style.display = 'none';
+                importBtn.style.display = 'block';
+                closeBtn.style.display = 'none';
+                generatePreview();
+            } else if (importCurrentStep === 3) {
+                nextBtn.style.display = 'none';
+                importBtn.style.display = 'none';
+            }
+        }
+
+        function prevStep() {
+            if (importCurrentStep > 1) {
+                importCurrentStep--;
+                updateImportSteps();
+            }
+        }
+
+        function nextStep() {
+            if (importCurrentStep === 1 && !importData) {
+                showToast('warning', 'Peringatan', 'Silakan pilih file Excel terlebih dahulu.');
+                return;
+            }
+            if (importCurrentStep < 3) {
+                importCurrentStep++;
+                updateImportSteps();
+            }
+        }
+
+        function generatePreview() {
+            if (!importData || importData.length === 0) return;
+
+            const headerRow = document.getElementById('previewHeader');
+            const bodyRow = document.getElementById('previewBody');
+            
+            headerRow.innerHTML = '';
+            bodyRow.innerHTML = '';
+
+            // Generate Headers
+            const headers = Object.keys(importData[0]);
+            let trHead = '<tr>';
+            headers.forEach(h => { trHead += `<th>${h}</th>`; });
+            trHead += '</tr>';
+            headerRow.innerHTML = trHead;
+
+            // Generate Rows (max 5)
+            const previewCount = Math.min(importData.length, 5);
+            for(let i=0; i<previewCount; i++) {
+                let tr = '<tr>';
+                headers.forEach(h => {
+                    tr += `<td>${importData[i][h]}</td>`;
+                });
+                tr += '</tr>';
+                bodyRow.innerHTML += tr;
+            }
+
+            // Stats
+            document.getElementById('totalRows').textContent = importData.length;
+            document.getElementById('validRows').textContent = importData.length; // Sederhana
+            document.getElementById('duplicateRows').textContent = 'Auto';
+        }
+
+        async function startImport() {
+            if (!importData) return;
+            
+            importCurrentStep = 3;
+            updateImportSteps();
+            
+            const overwrite = document.getElementById('overwriteData').checked;
+            const progressText = document.getElementById('progressText');
+            const progressBar = document.getElementById('progressBar');
+            const closeBtn = document.getElementById('closeBtn');
+            
+            let successCount = 0;
+            let errorCount = 0;
+            const total = importData.length;
+
+            for (let i = 0; i < total; i++) {
+                const row = importData[i];
+                try {
+                    // Cari kolom yang relevan berdasarkan nama (Case Insensitive)
+                    const getCol = (keywords) => {
+                        const key = Object.keys(row).find(k => keywords.some(kw => k.toLowerCase().includes(kw)));
+                        return key ? row[key] : '';
+                    };
+
+                    const noKep = getCol(['no kk', 'nomor kk', 'kk']);
+                    const nama = getCol(['nama', 'name']);
+                    
+                    if (!nama && !noKep) continue; // Skip baris kosong
+
+                    const alamat = getCol(['alamat', 'address']);
+                    const noHp = getCol(['hp', 'telp', 'telepon', 'phone']);
+                    const tglLahirRaw = getCol(['tgl lahir', 'tanggal lahir', 'birth']);
+                    const jabatan = getCol(['jabatan', 'posisi']) || 'Anggota';
+                    const status = getCol(['status']) || 'aktif';
+
+                    // Coba parsing tanggal lahir jika formatnya aneh dari Excel
+                    let tglLahir = '';
+                    if(tglLahirRaw) {
+                        if(typeof tglLahirRaw === 'number') {
+                            // Excel serial date to JS Date
+                            const date = new Date(Math.round((tglLahirRaw - 25569)*86400*1000));
+                            tglLahir = date.toISOString().split('T')[0];
+                        } else {
+                            tglLahir = tglLahirRaw; // Asumsi string format sudah YYYY-MM-DD
+                        }
+                    }
+
+                    const parsedKK = parseNomorKK(noKep);
+
+                    const memberData = {
+                        no_kep: noKep,
+                        nama: nama,
+                        tgl_lahir: tglLahir,
+                        no_hp: noHp,
+                        alamat: alamat,
+                        jabatan: jabatan,
+                        status: status.toLowerCase() === 'nonaktif' ? 'nonaktif' : 'aktif',
+                        jumlah_anak: 0,
+                        parsed_kk: parsedKK,
+                        updatedAt: Date.now(),
+                        updatedBy: currentUser.username + ' (Import)'
+                    };
+
+                    // Cek duplikasi
+                    let targetKey = null;
+                    if (overwrite) {
+                        const existing = members.find(m => (m.no_kep === noKep && noKep !== '') || m.nama.toLowerCase() === nama.toLowerCase());
+                        if (existing) targetKey = existing.firebaseKey;
+                    }
+
+                    if (!targetKey) {
+                        targetKey = db.ref('members').push().key;
+                        memberData.createdAt = Date.now();
+                        memberData.createdBy = currentUser.username + ' (Import)';
+                    }
+
+                    await db.ref(`members/${targetKey}`).set(memberData);
+                    successCount++;
+
+                } catch (err) {
+                    console.error("Error import row:", err);
+                    errorCount++;
+                }
+
+                // Update UI Progress
+                const percent = Math.round(((i + 1) / total) * 100);
+                progressBar.style.width = `${percent}%`;
+                progressText.textContent = `Mengimport: ${i + 1} dari ${total}`;
+            }
+
+            progressText.textContent = "Selesai!";
+            document.getElementById('progressDetails').innerHTML = `<span style="color:green">Berhasil: ${successCount}</span> | <span style="color:red">Gagal/Dilewati: ${errorCount}</span>`;
+            closeBtn.style.display = 'block';
+            
+            showToast('success', 'Import Selesai', `${successCount} data berhasil diproses.`);
+        }
+        
+        // Setup Event Listeners for Drag and Drop
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropArea = document.getElementById('dropArea');
+            if(dropArea) {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, preventDefaults, false);
+                });
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, () => dropArea.style.borderColor = '#2980b9', false);
+                });
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, () => dropArea.style.borderColor = '#3498db', false);
+                });
+                dropArea.addEventListener('drop', handleFileSelect, false);
+            }
+        });
+
+        function preventDefaults (e) { e.preventDefault(); e.stopPropagation(); }
+
+        // ==================== END FUNGSI IMPORT EXCEL ====================
         
         function closeMemberReportModal() { document.getElementById('memberReportModal').style.display = 'none'; }
         
