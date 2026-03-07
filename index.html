@@ -354,7 +354,12 @@
             font-weight: 600;
             color: #2c3e50;
             border-bottom: 2px solid #e9ecef;
-            vertical-align: top; /* Adjusted for filters */
+            vertical-align: top;
+        }
+
+        /* Hover effect for sortable headers */
+        th.sortable:hover {
+            background: #eef2f5;
         }
 
         td {
@@ -1542,14 +1547,38 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="vertical-align: top;">No <br><input type="text" id="colFilter0" class="column-filter" onkeyup="applyMembersFilters()" placeholder="Cari No..."></th>
-                                <th style="vertical-align: top;">Nama & No KK <br><input type="text" id="colFilter1" class="column-filter" onkeyup="applyMembersFilters()" placeholder="Cari Nama/KK..."></th>
-                                <th style="vertical-align: top;">Tanggal Lahir <br><input type="text" id="colFilter2" class="column-filter" onkeyup="applyMembersFilters()" placeholder="Cari Tgl..."></th>
-                                <th style="vertical-align: top;">Alamat</th>
-                                <th style="vertical-align: top;">No HP</th>
-                                <th style="vertical-align: top;">Jabatan <br><input type="text" id="colFilter5" class="column-filter" onkeyup="applyMembersFilters()" placeholder="Cari Jabatan..."></th>
-                                <th style="vertical-align: top;">Status <br><input type="text" id="colFilter6" class="column-filter" onkeyup="applyMembersFilters()" placeholder="Cari Status..."></th>
-                                <th style="vertical-align: top;">Kategori <br><input type="text" id="colFilter7" class="column-filter" onkeyup="applyMembersFilters()" placeholder="Cari Kategori..."></th>
+                                <th class="sortable" style="vertical-align: top; cursor: pointer; user-select: none; width: 60px;" onclick="handleSort('no')">
+                                    No <span id="sortIcon_no" style="font-size: 10px; color: #ccc;"> ↕️</span><br>
+                                    <input type="text" id="colFilter0" class="column-filter" onclick="event.stopPropagation()" onkeyup="applyMembersFilters()" placeholder="No...">
+                                </th>
+                                <th class="sortable" style="vertical-align: top; cursor: pointer; user-select: none;" onclick="handleSort('nomorInduk')">
+                                    Nama & No KK <span id="sortIcon_nomorInduk" style="font-size: 10px; color: #3498db;"> ▲</span><br>
+                                    <input type="text" id="colFilter1" class="column-filter" onclick="event.stopPropagation()" onkeyup="applyMembersFilters()" placeholder="Cari Nama/KK...">
+                                </th>
+                                <th class="sortable" style="vertical-align: top; cursor: pointer; user-select: none;" onclick="handleSort('tgl_lahir')">
+                                    Tanggal Lahir <span id="sortIcon_tgl_lahir" style="font-size: 10px; color: #ccc;"> ↕️</span><br>
+                                    <input type="text" id="colFilter2" class="column-filter" onclick="event.stopPropagation()" onkeyup="applyMembersFilters()" placeholder="Cari Tgl...">
+                                </th>
+                                <th style="vertical-align: top;">
+                                    Alamat <br>
+                                    <input type="text" id="colFilter3" class="column-filter" onclick="event.stopPropagation()" onkeyup="applyMembersFilters()" placeholder="Cari Alamat...">
+                                </th>
+                                <th style="vertical-align: top;">
+                                    No HP <br>
+                                    <input type="text" id="colFilter4" class="column-filter" onclick="event.stopPropagation()" onkeyup="applyMembersFilters()" placeholder="Cari HP...">
+                                </th>
+                                <th class="sortable" style="vertical-align: top; cursor: pointer; user-select: none;" onclick="handleSort('jabatan')">
+                                    Jabatan <span id="sortIcon_jabatan" style="font-size: 10px; color: #ccc;"> ↕️</span><br>
+                                    <input type="text" id="colFilter5" class="column-filter" onclick="event.stopPropagation()" onkeyup="applyMembersFilters()" placeholder="Cari Jabatan...">
+                                </th>
+                                <th class="sortable" style="vertical-align: top; cursor: pointer; user-select: none;" onclick="handleSort('status')">
+                                    Status <span id="sortIcon_status" style="font-size: 10px; color: #ccc;"> ↕️</span><br>
+                                    <input type="text" id="colFilter6" class="column-filter" onclick="event.stopPropagation()" onkeyup="applyMembersFilters()" placeholder="Cari Status...">
+                                </th>
+                                <th class="sortable" style="vertical-align: top; cursor: pointer; user-select: none;" onclick="handleSort('kategori')">
+                                    Kategori <span id="sortIcon_kategori" style="font-size: 10px; color: #ccc;"> ↕️</span><br>
+                                    <input type="text" id="colFilter7" class="column-filter" onclick="event.stopPropagation()" onkeyup="applyMembersFilters()" placeholder="Cari Kategori...">
+                                </th>
                                 <th style="vertical-align: top;">Jml Anak</th>
                                 <th style="vertical-align: top;">Aksi</th>
                             </tr>
@@ -1857,6 +1886,9 @@
         let importCurrentStep = 1;
         let importData = null;
         let importColumnMapping = {};
+        
+        // VARIABEL SORTING BARU
+        let currentSort = { column: 'nomorInduk', direction: 'asc' };
 
         // Default users dengan role yang valid
         const defaultUsers = [
@@ -2591,7 +2623,35 @@
             }
         }
 
-        // ==================== FUNGSI FILTER MENDALAM ====================
+        // ==================== FUNGSI SORTING & FILTER MENDALAM ====================
+        
+        function handleSort(column) {
+            if (currentSort.column === column) {
+                // Toggle direction
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+            renderMembersTable();
+        }
+
+        function updateSortIcons() {
+            const columns = ['no', 'nomorInduk', 'tgl_lahir', 'jabatan', 'status', 'kategori'];
+            columns.forEach(col => {
+                const el = document.getElementById('sortIcon_' + col);
+                if (el) {
+                    if (currentSort.column === col) {
+                        el.textContent = currentSort.direction === 'asc' ? ' ▲' : ' ▼';
+                        el.style.color = '#3498db';
+                    } else {
+                        el.textContent = ' ↕️';
+                        el.style.color = '#ccc';
+                    }
+                }
+            });
+        }
+
         function filterMembers(status) {
              if (status && event && event.type === 'click') {
                  document.querySelectorAll('#members .filter-buttons .filter-btn').forEach(btn => btn.classList.remove('active'));
@@ -2615,7 +2675,7 @@
              const term = document.getElementById('searchMember').value.toLowerCase();
              const rows = document.getElementById('membersTable').getElementsByTagName('tr');
              
-             // Kumpulkan nilai filter kolom spesifik
+             // Kumpulkan nilai filter kotak dari bawah header kolom
              const colFilters = [];
              for (let i = 0; i <= 8; i++) {
                  const input = document.getElementById('colFilter' + i);
@@ -2629,7 +2689,7 @@
                  const text = row.textContent.toLowerCase();
                  let statusMatch = true;
                  
-                 // Evaluasi Filter Button (Aktif/Nonaktif/Kategori)
+                 // Evaluasi Filter Button utama (Aktif/Nonaktif/Kategori)
                  if (currentFilter === 'aktif' || currentFilter === 'nonaktif') {
                      if (cells.length > 6) {
                          const statusCell = cells[6].textContent.toLowerCase(); 
@@ -2644,7 +2704,7 @@
                      }
                  }
                  
-                 // Evaluasi Filter Kolom Spesifik (No, Nama, dll)
+                 // Evaluasi kotak filter spesifik per kolom
                  let colMatch = true;
                  for (let j = 0; j < colFilters.length; j++) {
                      if (colFilters[j] && cells[j]) {
@@ -2794,25 +2854,69 @@
             tbody.innerHTML = '';
             if (members.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">Belum ada data anggota.</td></tr>`;
+                updateSortIcons();
                 return;
             }
             
-            // Mengurutkan data secara otomatis berdasarkan Nomor Induk dari No KK (contoh: 0001)
+            // FUNGSI SORTING PINTAR (MENCAKUP HIERARKI KELUARGA)
             const sortedMembers = [...members].sort((a, b) => {
                 const parsedA = parseNomorKK(a.no_kep);
                 const parsedB = parseNomorKK(b.no_kep);
-                
-                const noA = parsedA && parsedA.nomorInduk ? parseInt(parsedA.nomorInduk) : Number.MAX_SAFE_INTEGER;
-                const noB = parsedB && parsedB.nomorInduk ? parseInt(parsedB.nomorInduk) : Number.MAX_SAFE_INTEGER;
-                
-                if (noA !== noB) {
-                    return noA - noB; // Mengurutkan dari angka terkecil ke terbesar
+
+                if (currentSort.column === 'nomorInduk' || currentSort.column === 'no') {
+                    const noA = parsedA && parsedA.nomorInduk ? parseInt(parsedA.nomorInduk) : Number.MAX_SAFE_INTEGER;
+                    const noB = parsedB && parsedB.nomorInduk ? parseInt(parsedB.nomorInduk) : Number.MAX_SAFE_INTEGER;
+
+                    // Mengurutkan berdasarkan Nomor Induk Keluarga (0001, 0002, dst)
+                    if (noA !== noB) {
+                        return currentSort.direction === 'asc' ? noA - noB : noB - noA;
+                    }
+
+                    // Jika berada di keluarga yang sama (Nomor Induk Sama), urutkan berdasarkan Status/Gender
+                    const getWeight = (status) => {
+                        if (!status) return 99;
+                        const s = status.toUpperCase();
+                        if (s === 'S') return 1; // Suami / Laki-laki diurutkan PERTAMA
+                        if (s === 'I') return 2; // Istri / Perempuan diurutkan KEDUA
+                        if (s.startsWith('A')) { // Anak diurutkan KETIGA dan seterusnya
+                            const num = parseInt(s.substring(1));
+                            return 2 + (isNaN(num) ? 1 : num);
+                        }
+                        return 99;
+                    };
+
+                    const weightA = parsedA ? getWeight(parsedA.status) : 99;
+                    const weightB = parsedB ? getWeight(parsedB.status) : 99;
+
+                    if (weightA !== weightB) {
+                        return currentSort.direction === 'asc' ? weightA - weightB : weightB - weightA;
+                    }
+
+                    const nameA = a.nama ? a.nama.toLowerCase() : '';
+                    const nameB = b.nama ? b.nama.toLowerCase() : '';
+                    return currentSort.direction === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
                 }
-                
-                // Jika Nomor Induk sama atau tidak ada, diurutkan berdasarkan abjad nama
-                const nameA = a.nama ? a.nama.toLowerCase() : '';
-                const nameB = b.nama ? b.nama.toLowerCase() : '';
-                return nameA.localeCompare(nameB);
+
+                // Logika Sorting untuk Kolom Lainnya
+                let valA = '', valB = '';
+                if (currentSort.column === 'tgl_lahir') {
+                    valA = a.tgl_lahir ? new Date(a.tgl_lahir).getTime() : 0;
+                    valB = b.tgl_lahir ? new Date(b.tgl_lahir).getTime() : 0;
+                    return currentSort.direction === 'asc' ? valA - valB : valB - valA;
+                } else if (currentSort.column === 'jabatan') {
+                    valA = a.jabatan ? a.jabatan.toLowerCase() : '';
+                    valB = b.jabatan ? b.jabatan.toLowerCase() : '';
+                } else if (currentSort.column === 'status') {
+                    valA = a.status ? a.status.toLowerCase() : '';
+                    valB = b.status ? b.status.toLowerCase() : '';
+                } else if (currentSort.column === 'kategori') {
+                    valA = parsedA && parsedA.kategori ? parsedA.kategori : '';
+                    valB = parsedB && parsedB.kategori ? parsedB.kategori : '';
+                }
+
+                if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
             });
 
             sortedMembers.forEach((member, index) => {
@@ -2840,8 +2944,9 @@
                 tbody.appendChild(tr);
             });
             
-            // Memastikan kondisi filter yang aktif tidak hilang setelah data diperbarui dari server
+            // Memastikan ikon sorting dan filter box berfungsi harmonis
             applyMembersFilters();
+            updateSortIcons();
         }
         
         function showDetailMember(firebaseKey) {
