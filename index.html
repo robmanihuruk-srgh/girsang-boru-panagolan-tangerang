@@ -354,6 +354,7 @@
             font-weight: 600;
             color: #2c3e50;
             border-bottom: 2px solid #e9ecef;
+            vertical-align: top; /* Adjusted for filters */
         }
 
         td {
@@ -430,7 +431,6 @@
             background: #27ae60;
         }
 
-        /* NEW BUTTON STYLE FOR RESET PASSWORD */
         .action-btn.reset {
             background: #f39c12;
             color: white;
@@ -440,7 +440,6 @@
             background: #e67e22;
         }
         
-        /* NEW BUTTON STYLE FOR QR CODE */
         .action-btn.qr {
             background: #34495e;
             color: white;
@@ -448,6 +447,26 @@
 
         .action-btn.qr:hover {
             background: #2c3e50;
+        }
+
+        /* NEW STYLES FOR TABLE COLUMN FILTERS */
+        .column-filter {
+            width: 100%;
+            padding: 8px 10px;
+            margin-top: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 12px;
+            box-sizing: border-box;
+            font-weight: normal;
+            background-color: #ffffff;
+            transition: all 0.3s ease;
+        }
+        
+        .column-filter:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
         }
 
         /* FORM STYLES */
@@ -619,7 +638,6 @@
             text-align: center;
         }
 
-        /* MODIFIED LOGIN LOGO FOR IMAGE */
         .login-logo {
             width: 80px;
             height: 80px;
@@ -652,7 +670,6 @@
             margin-bottom: 30px;
         }
         
-        /* MODERN LOGIN INPUTS (ICON INSIDE) */
         .login-box .form-group {
             position: relative;
             margin-bottom: 20px;
@@ -670,7 +687,7 @@
         
         .login-input {
             width: 100%;
-            padding: 12px 15px 12px 45px; /* Extra padding left for icon */
+            padding: 12px 15px 12px 45px; 
             border: 2px solid #e9ecef;
             border-radius: 10px;
             font-size: 16px;
@@ -1525,16 +1542,16 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>No</th>
-                                <th>Nama & No KK</th>
-                                <th>Tanggal Lahir</th>
-                                <th>Alamat</th>
-                                <th>No HP</th>
-                                <th>Jabatan</th>
-                                <th>Status</th>
-                                <th>Kategori</th>
-                                <th>Jml Anak</th>
-                                <th>Aksi</th>
+                                <th style="vertical-align: top;">No <br><input type="text" id="colFilter0" class="column-filter" onkeyup="applyMembersFilters()" placeholder="Cari No..."></th>
+                                <th style="vertical-align: top;">Nama & No KK <br><input type="text" id="colFilter1" class="column-filter" onkeyup="applyMembersFilters()" placeholder="Cari Nama/KK..."></th>
+                                <th style="vertical-align: top;">Tanggal Lahir <br><input type="text" id="colFilter2" class="column-filter" onkeyup="applyMembersFilters()" placeholder="Cari Tgl..."></th>
+                                <th style="vertical-align: top;">Alamat</th>
+                                <th style="vertical-align: top;">No HP</th>
+                                <th style="vertical-align: top;">Jabatan <br><input type="text" id="colFilter5" class="column-filter" onkeyup="applyMembersFilters()" placeholder="Cari Jabatan..."></th>
+                                <th style="vertical-align: top;">Status <br><input type="text" id="colFilter6" class="column-filter" onkeyup="applyMembersFilters()" placeholder="Cari Status..."></th>
+                                <th style="vertical-align: top;">Kategori <br><input type="text" id="colFilter7" class="column-filter" onkeyup="applyMembersFilters()" placeholder="Cari Kategori..."></th>
+                                <th style="vertical-align: top;">Jml Anak</th>
+                                <th style="vertical-align: top;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="membersTable"></tbody>
@@ -2301,10 +2318,6 @@
                 updateDashboard();
                 updateReports();
                 updateCharts();
-                
-                // Re-apply filter jika sedang mencari
-                const searchTerm = document.getElementById('searchMember').value;
-                if(searchTerm) filterMembers();
             });
             
             // Listener Attendance
@@ -2547,7 +2560,7 @@
            // Disabled via UI mapping above
         }
         
-        // UPDATE: FORGOT PASSWORD FUNCTIONS (MENGGUNAKAN FIREBASE AUTH)
+        // FORGOT PASSWORD FUNCTIONS (MENGGUNAKAN FIREBASE AUTH)
         function showForgotPasswordModal() {
             document.getElementById('forgotPasswordModal').style.display = 'flex';
             document.getElementById('recoveryEmail').value = '';
@@ -2576,6 +2589,80 @@
                 
                 showToast('error', 'Gagal', msg);
             }
+        }
+
+        // ==================== FUNGSI FILTER MENDALAM ====================
+        function filterMembers(status) {
+             if (status && event && event.type === 'click') {
+                 document.querySelectorAll('#members .filter-buttons .filter-btn').forEach(btn => btn.classList.remove('active'));
+                 event.target.classList.add('active');
+                 window.currentMemberFilter = status;
+             }
+             applyMembersFilters();
+        }
+        
+        function filterMembersByCategory(category) {
+             if (category && event && event.type === 'click') {
+                 document.querySelectorAll('#members .filter-buttons .filter-btn').forEach(btn => btn.classList.remove('active'));
+                 event.target.classList.add('active');
+                 window.currentMemberFilter = 'cat_' + category;
+             }
+             applyMembersFilters();
+        }
+
+        function applyMembersFilters() {
+             const currentFilter = window.currentMemberFilter || 'all';
+             const term = document.getElementById('searchMember').value.toLowerCase();
+             const rows = document.getElementById('membersTable').getElementsByTagName('tr');
+             
+             // Kumpulkan nilai filter kolom spesifik
+             const colFilters = [];
+             for (let i = 0; i <= 8; i++) {
+                 const input = document.getElementById('colFilter' + i);
+                 colFilters.push(input ? input.value.toLowerCase() : '');
+             }
+
+             for (let row of rows) {
+                 const cells = row.getElementsByTagName('td');
+                 if (cells.length === 0) continue;
+                 
+                 const text = row.textContent.toLowerCase();
+                 let statusMatch = true;
+                 
+                 // Evaluasi Filter Button (Aktif/Nonaktif/Kategori)
+                 if (currentFilter === 'aktif' || currentFilter === 'nonaktif') {
+                     if (cells.length > 6) {
+                         const statusCell = cells[6].textContent.toLowerCase(); 
+                         statusMatch = statusCell.includes(currentFilter);
+                     }
+                 } else if (currentFilter.startsWith('cat_')) {
+                     const cat = currentFilter.split('_')[1];
+                     const targetCat = cat === 'G' ? 'Girsang' : cat === 'B' ? 'Boru' : 'Panagolan';
+                     if (cells.length > 7) {
+                         const catText = cells[7].textContent;
+                         statusMatch = catText.includes(targetCat);
+                     }
+                 }
+                 
+                 // Evaluasi Filter Kolom Spesifik (No, Nama, dll)
+                 let colMatch = true;
+                 for (let j = 0; j < colFilters.length; j++) {
+                     if (colFilters[j] && cells[j]) {
+                         const cellValue = cells[j].textContent.toLowerCase();
+                         if (!cellValue.includes(colFilters[j])) {
+                             colMatch = false;
+                             break;
+                         }
+                     }
+                 }
+
+                 // Keputusan akhir untuk menampilkan atau menyembunyikan baris
+                 if (text.includes(term) && statusMatch && colMatch) {
+                     row.style.display = '';
+                 } else {
+                     row.style.display = 'none';
+                 }
+             }
         }
 
 
@@ -2709,7 +2796,26 @@
                 tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">Belum ada data anggota.</td></tr>`;
                 return;
             }
-            members.forEach((member, index) => {
+            
+            // Mengurutkan data secara otomatis berdasarkan Nomor Induk dari No KK (contoh: 0001)
+            const sortedMembers = [...members].sort((a, b) => {
+                const parsedA = parseNomorKK(a.no_kep);
+                const parsedB = parseNomorKK(b.no_kep);
+                
+                const noA = parsedA && parsedA.nomorInduk ? parseInt(parsedA.nomorInduk) : Number.MAX_SAFE_INTEGER;
+                const noB = parsedB && parsedB.nomorInduk ? parseInt(parsedB.nomorInduk) : Number.MAX_SAFE_INTEGER;
+                
+                if (noA !== noB) {
+                    return noA - noB; // Mengurutkan dari angka terkecil ke terbesar
+                }
+                
+                // Jika Nomor Induk sama atau tidak ada, diurutkan berdasarkan abjad nama
+                const nameA = a.nama ? a.nama.toLowerCase() : '';
+                const nameB = b.nama ? b.nama.toLowerCase() : '';
+                return nameA.localeCompare(nameB);
+            });
+
+            sortedMembers.forEach((member, index) => {
                 const tr = document.createElement('tr');
                 const parsed = parseNomorKK(member.no_kep);
                 tr.innerHTML = `
@@ -2733,6 +2839,9 @@
                 `;
                 tbody.appendChild(tr);
             });
+            
+            // Memastikan kondisi filter yang aktif tidak hilang setelah data diperbarui dari server
+            applyMembersFilters();
         }
         
         function showDetailMember(firebaseKey) {
@@ -3018,63 +3127,6 @@
             const pending = members.filter(m => !m.status || m.status === 'pending').length;
             if (pending > 0 && currentUser.role === 'admin') {
                 showToast('warning', 'Pemberitahuan', `Ada ${pending} anggota perlu verifikasi.`);
-            }
-        }
-
-        function filterMembers(status) {
-             if (status && event && event.type === 'click') {
-                 document.querySelectorAll('#members .filter-buttons .filter-btn').forEach(btn => btn.classList.remove('active'));
-                 event.target.classList.add('active');
-                 window.currentMemberFilter = status;
-             }
-             
-             const currentFilter = window.currentMemberFilter || 'all';
-             const term = document.getElementById('searchMember').value.toLowerCase();
-             const rows = document.getElementById('membersTable').getElementsByTagName('tr');
-             
-             for (let row of rows) {
-                 const text = row.textContent.toLowerCase();
-                 const cells = row.getElementsByTagName('td');
-                 let statusMatch = true;
-                 
-                 if (currentFilter !== 'all' && cells.length > 6) {
-                     const statusCell = cells[6].textContent.toLowerCase(); 
-                     statusMatch = statusCell.includes(currentFilter);
-                 }
-                 
-                 if (text.includes(term) && statusMatch) {
-                     row.style.display = '';
-                 } else {
-                     row.style.display = 'none';
-                 }
-             }
-        }
-        
-        function filterMembersByCategory(category) {
-             if (category && event && event.type === 'click') {
-                 document.querySelectorAll('#members .filter-buttons .filter-btn').forEach(btn => btn.classList.remove('active'));
-                 event.target.classList.add('active');
-             }
-
-            const term = document.getElementById('searchMember').value.toLowerCase();
-            const rows = document.getElementById('membersTable').getElementsByTagName('tr');
-            
-            const targetCat = category === 'G' ? 'Girsang' : category === 'B' ? 'Boru' : 'Panagolan';
-
-            for (let row of rows) {
-                const cells = row.getElementsByTagName('td');
-                if (cells.length === 0) continue;
-
-                const text = row.textContent.toLowerCase();
-                const matchesSearch = text.includes(term);
-                
-                let matchesFilter = false;
-                if (cells.length > 7) {
-                    const catText = cells[7].textContent;
-                    matchesFilter = catText.includes(targetCat);
-                }
-                
-                row.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
             }
         }
 
