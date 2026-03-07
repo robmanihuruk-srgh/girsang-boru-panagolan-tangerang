@@ -1273,19 +1273,19 @@
     <div id="forgotPasswordModal" class="modal-overlay">
         <div class="modal-box" style="max-width: 400px;">
             <div class="modal-header">
-                <h3>❓ Pemulihan Akun Admin</h3>
+                <h3>❓ Lupa Password</h3>
                 <div class="modal-close" onclick="document.getElementById('forgotPasswordModal').style.display='none'">×</div>
             </div>
             <div class="modal-body">
-                <p style="font-size:14px; color:#666;">Silakan hubungi Administrator sistem atau lakukan reset melalui Firebase Console.</p>
+                <p style="font-size:14px; color:#666; margin-bottom: 15px;">Masukkan email akun Anda. Kami akan mengirimkan tautan untuk mereset password ke email tersebut.</p>
                 <div class="form-group">
-                    <label for="recoveryCode">Kode Master (Legacy)</label>
-                    <input type="password" id="recoveryCode" class="form-control" placeholder="Masukkan kode rahasia...">
+                    <label for="recoveryEmail">Email Terdaftar</label>
+                    <input type="email" id="recoveryEmail" class="form-control" placeholder="Contoh: user@gmail.com">
                 </div>
             </div>
             <div class="modal-footer">
                 <button onclick="document.getElementById('forgotPasswordModal').style.display='none'" class="btn btn-danger">Batal</button>
-                <button onclick="processAdminReset()" class="btn btn-success">Reset Legacy</button>
+                <button onclick="processAdminReset()" class="btn btn-success">Kirim Link Reset</button>
             </div>
         </div>
     </div>
@@ -2547,15 +2547,35 @@
            // Disabled via UI mapping above
         }
         
-        // FORGOT PASSWORD FUNCTIONS
+        // UPDATE: FORGOT PASSWORD FUNCTIONS (MENGGUNAKAN FIREBASE AUTH)
         function showForgotPasswordModal() {
             document.getElementById('forgotPasswordModal').style.display = 'flex';
-            document.getElementById('recoveryCode').value = '';
+            document.getElementById('recoveryEmail').value = '';
         }
 
         async function processAdminReset() {
-            showToast('info', 'Info', 'Silakan gunakan fitur reset password bawaan Firebase Auth atau hubungi Administrator tertinggi Anda.');
-            document.getElementById('forgotPasswordModal').style.display = 'none';
+            const email = document.getElementById('recoveryEmail').value.trim();
+            
+            if (!email) {
+                showToast('error', 'Error', 'Silakan masukkan email Anda terlebih dahulu.');
+                return;
+            }
+
+            try {
+                // Mengirim instruksi reset password menggunakan fungsi resmi Firebase
+                await auth.sendPasswordResetEmail(email);
+                
+                showToast('success', 'Email Terkirim', 'Tautan untuk mereset password telah dikirim ke email Anda. Silakan cek kotak masuk (Inbox) atau Spam.');
+                document.getElementById('forgotPasswordModal').style.display = 'none';
+                
+            } catch (error) {
+                console.error("Reset Error:", error);
+                let msg = 'Terjadi kesalahan saat mereset password.';
+                if (error.code === 'auth/user-not-found') msg = 'Email tidak terdaftar di sistem.';
+                if (error.code === 'auth/invalid-email') msg = 'Format email tidak valid.';
+                
+                showToast('error', 'Gagal', msg);
+            }
         }
 
 
