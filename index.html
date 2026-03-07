@@ -1,5 +1,4 @@
-<!DOCTYPE html>                    
-                    
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -57,14 +56,14 @@
             align-items: center;
             justify-content: center;
             border: 3px solid #3498db;
-            overflow: hidden; /* Ensures image stays within circle */
-            padding: 5px; /* Adds a little padding so logo doesn't touch edges */
+            overflow: hidden;
+            padding: 5px;
         }
         
         .logo img {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Keeps aspect ratio */
+            object-fit: contain;
         }
 
         .title-section h1 {
@@ -630,9 +629,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden; /* Ensures image fits */
+            overflow: hidden; 
             padding: 5px;
-            background: white; /* Changed to white for transparent images */
+            background: white; 
             border: 2px solid #e9ecef;
         }
 
@@ -1220,8 +1219,8 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="userUsername">Username *</label>
-                    <input type="text" id="userUsername" class="form-control" placeholder="Username untuk login" required>
+                    <label for="userUsername">Username / Email *</label>
+                    <input type="email" id="userUsername" class="form-control" placeholder="Email untuk login" required>
                 </div>
                 <div class="form-group">
                     <label for="userPassword">Password *</label>
@@ -1278,15 +1277,15 @@
                 <div class="modal-close" onclick="document.getElementById('forgotPasswordModal').style.display='none'">×</div>
             </div>
             <div class="modal-body">
-                <p style="font-size:14px; color:#666;">Masukkan <strong>Kode Master</strong> untuk mereset password akun 'admin' ke default (admin123).</p>
+                <p style="font-size:14px; color:#666;">Silakan hubungi Administrator sistem atau lakukan reset melalui Firebase Console.</p>
                 <div class="form-group">
-                    <label for="recoveryCode">Kode Master</label>
+                    <label for="recoveryCode">Kode Master (Legacy)</label>
                     <input type="password" id="recoveryCode" class="form-control" placeholder="Masukkan kode rahasia...">
                 </div>
             </div>
             <div class="modal-footer">
                 <button onclick="document.getElementById('forgotPasswordModal').style.display='none'" class="btn btn-danger">Batal</button>
-                <button onclick="processAdminReset()" class="btn btn-success">Reset Password</button>
+                <button onclick="processAdminReset()" class="btn btn-success">Reset Legacy</button>
             </div>
         </div>
     </div>
@@ -1383,7 +1382,7 @@
             
             <div class="form-group">
                 <span class="login-input-icon">👤</span>
-                <input type="text" id="username" class="login-input" placeholder="Username" value="">
+                <input type="email" id="username" class="login-input" placeholder="Email Terdaftar" value="">
             </div>
             
             <div class="form-group">
@@ -1397,12 +1396,6 @@
             
             <div style="margin-top: 15px;">
                 <a href="#" onclick="showForgotPasswordModal()" style="font-size: 13px; color: #3498db; text-decoration: none;">Lupa Password?</a>
-            </div>
-
-            <div style="margin-top: 20px; font-size: 12px; color: #666; display: none;">
-                <p>Default login:</p>
-                <p><strong>Admin:</strong> admin / admin123</p>
-                <p><strong>User:</strong> user1 / user123</p>
             </div>
         </div>
     </div>
@@ -2067,42 +2060,84 @@
             }
         }
 
-        // ==================== FUNGSI LOGIN & AUTH ====================
-        function login() {
-            const username = document.getElementById('username').value.trim();
+        // ==================== FUNGSI LOGIN & AUTH FIREBASE ====================
+        
+        async function login() {
+            const email = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
             
-            if (!username || !password) {
-                showToast('error', 'Login Gagal', 'Username dan password harus diisi.');
+            if (!email || !password) {
+                showToast('error', 'Login Gagal', 'Email dan password harus diisi.');
                 return;
             }
             
-            let userFound = null;
-            for (const user of defaultUsers) {
-                if (user.username === username && user.password === password) {
-                    userFound = user;
-                    break;
+            try {
+                // 1. Proses Login Resmi ke Firebase Authentication
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                // 2. Ambil data role dari Realtime Database (Folder 'users')
+                let userRole = 'user';
+                let userFullName = user.email;
+
+                const snapshot = await db.ref('users').once('value');
+                const usersData = snapshot.val();
+
+                if (usersData) {
+                    const dbUserKey = Object.keys(usersData).find(key =>
+                        usersData[key].username === email || usersData[key].email === email
+                    );
+
+                    if (dbUserKey) {
+                        userRole = usersData[dbUserKey].role || 'user';
+                        userFullName = usersData[dbUserKey].fullName || user.email;
+                    } else if (email === 'admin@girsang.com' || email.startsWith('admin')) {
+                        userRole = 'admin';
+                    }
                 }
+
+                // 3. Set Current User Local State
+                currentUser = {
+                    uid: user.uid,
+                    username: email,
+                    role: userRole,
+                    fullName: userFullName
+                };
+
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                showToast('success', 'Login Berhasil', `Selamat datang, ${userFullName}!`);
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+
+                // 4. Inisialisasi Aplikasi
+                initializeApp();
+
+            } catch (error) {
+                console.error("Login Error:", error);
+                let errorMessage = 'Email atau password salah / tidak terdaftar.';
+                if (error.code === 'auth/invalid-email') errorMessage = 'Format email tidak valid.';
+                if (error.code === 'auth/user-not-found') errorMessage = 'Email belum terdaftar.';
+                if (error.code === 'auth/wrong-password') errorMessage = 'Password salah.';
+
+                showToast('error', 'Login Gagal', errorMessage);
             }
-            
-            if (!userFound && users.length > 0) {
-                userFound = users.find(u => u.username === username && u.password === password);
-            }
-            
-            if (!userFound) {
-                showToast('error', 'Login Gagal', 'Username atau password salah.');
-                return;
-            }
-            
-            currentUser = userFound;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            showToast('success', 'Login Berhasil', `Selamat datang, ${currentUser.username}!`);
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-            initializeApp();
         }
 
         function logout() {
+            if (auth) {
+                auth.signOut().then(() => {
+                    executeLogout();
+                }).catch((error) => {
+                    console.error("Logout error:", error);
+                    showToast('error', 'Logout Gagal', 'Terjadi kesalahan saat logout.');
+                });
+            } else {
+                executeLogout();
+            }
+        }
+
+        function executeLogout() {
             currentUser = {username: '', role: 'user'};
             localStorage.removeItem('currentUser');
             document.getElementById('loginPage').style.display = 'flex';
@@ -2114,27 +2149,50 @@
             
             closeAllModals();
             showToast('info', 'Logged Out', 'Anda telah logout dari sistem.');
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
         }
 
         function checkAuthOnLoad() {
-            const savedUser = localStorage.getItem('currentUser');
-            if (savedUser) {
-                try {
-                    currentUser = JSON.parse(savedUser);
+            // Memastikan status Auth sinkron dengan Firebase
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // Jika token valid tapi state lokal hilang, set minimal state
+                    if (!localStorage.getItem('currentUser')) {
+                        currentUser = {
+                            uid: user.uid,
+                            username: user.email,
+                            role: 'user', // Default safety
+                            fullName: user.email
+                        };
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    } else {
+                        currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                    }
+                    
                     document.getElementById('loginPage').style.display = 'none';
                     document.getElementById('app').style.display = 'block';
                     initializeApp();
-                } catch (e) {
-                    localStorage.removeItem('currentUser');
+                } else {
+                    // Jika Firebase session drop, bersihkan lokal
+                    if (appInitialized) {
+                        executeLogout();
+                    } else {
+                        localStorage.removeItem('currentUser');
+                        document.getElementById('loginPage').style.display = 'flex';
+                        document.getElementById('app').style.display = 'none';
+                    }
                 }
-            }
+            });
         }
 
         // ==================== INITIALIZE APP ====================
         async function initializeApp() {
             if (appInitialized) return;
             
-            document.getElementById('userDisplayName').textContent = currentUser.username;
+            document.getElementById('userDisplayName').textContent = currentUser.fullName || currentUser.username;
             document.getElementById('userRoleDisplay').textContent = getRoleDisplayText(currentUser.role);
             document.getElementById('userRoleDisplay').style.backgroundColor = getRoleColor(currentUser.role);
             
@@ -2373,7 +2431,7 @@
             const role = document.getElementById('userRole').value;
             
             if (!username || !fullName || !role) {
-                showToast('error', 'Validasi Gagal', 'Username, nama lengkap, dan role harus diisi.');
+                showToast('error', 'Validasi Gagal', 'Username/Email, nama lengkap, dan role harus diisi.');
                 return;
             }
             
@@ -2388,25 +2446,14 @@
                 return;
             }
             
-            if (!firebaseKey) {
-                const existingUser = users.find(u => u.username === username);
-                if (existingUser) {
-                    showToast('error', 'Username Sudah Ada', 'Username sudah digunakan. Silakan pilih username lain.');
-                    return;
-                }
-            }
-            
             const userData = {
                 username: username,
+                email: username, // Asumsi form menggunakan email untuk username
                 fullName: fullName,
                 role: role,
                 updatedAt: Date.now(),
                 updatedBy: currentUser.username
             };
-            
-            if (password) {
-                userData.password = password;
-            }
             
             let path;
             
@@ -2416,24 +2463,25 @@
                 if (existingUser) {
                     userData.createdAt = existingUser.createdAt || Date.now();
                     userData.createdBy = existingUser.createdBy || currentUser.username;
-                    if (!password) {
-                        userData.password = existingUser.password;
-                    }
+                    // Note: update auth password di sisi client admin memerlukan privileges tinggi, 
+                    // sebaiknya diarahkan menggunakan Firebase Console.
                 }
                 const success = await saveToFirebase(path, userData);
                 if (success) {
-                    showToast('success', 'Berhasil', 'Data pengguna berhasil diperbarui.');
+                    showToast('success', 'Berhasil', 'Data role pengguna diperbarui. (Ubah password hanya di Firebase Console)');
                     closeUserModal();
                 }
             } else {
-                const newKey = username; 
+                // Untuk pembuatan user baru, di sisi ini kita hanya menyimpan data Role.
+                // Akun autentikasi asli harus dibuat di tab Authentication pada Firebase Console.
+                showToast('info', 'Perhatian', 'Pastikan email ini juga didaftarkan di tab Authentication Firebase Console.');
+                const newKey = username.replace(/\./g, ','); // Sanitasi untuk key firebase
                 path = `users/${newKey}`;
-                userData.password = password;
                 userData.createdAt = Date.now();
                 userData.createdBy = currentUser.username;
                 const success = await saveToFirebase(path, userData);
                 if (success) {
-                    showToast('success', 'Berhasil', 'Pengguna baru berhasil ditambahkan.');
+                    showToast('success', 'Berhasil', 'Role pengguna baru berhasil ditambahkan.');
                     closeUserModal();
                 }
             }
@@ -2445,7 +2493,7 @@
                 return;
             }
             
-            if (!confirm('Apakah Anda yakin ingin menghapus pengguna ini?')) return;
+            if (!confirm('Apakah Anda yakin ingin menghapus data pengguna ini? (Note: Hapus permanen di Firebase Auth Console)')) return;
             
             const userToDelete = users.find(u => u.firebaseKey === firebaseKey);
             if (userToDelete && userToDelete.username === currentUser.username) {
@@ -2479,7 +2527,6 @@
                         <div class="action-buttons">
                             <button onclick="showEditUserForm('${user.firebaseKey}')" class="action-btn edit" title="Edit">✏️</button>
                             <button onclick="deleteUser('${user.firebaseKey}')" class="action-btn delete" title="Hapus">🗑️</button>
-                            <button onclick="showResetPasswordModal('${user.firebaseKey}')" class="action-btn reset" title="Reset Password">🔑</button>
                         </div>
                     </td>
                 `;
@@ -2487,20 +2534,9 @@
             });
         }
         
-        // Reset Password Functions (Admin resetting other users)
+        // Reset Password Functions (Admin resetting other users) - Disabled for Auth
         function showResetPasswordModal(firebaseKey) {
-            if (currentUser.role !== 'admin') {
-                showToast('error', 'Akses Ditolak', 'Hanya Administrator yang bisa mereset password.');
-                return;
-            }
-
-            const user = users.find(u => u.firebaseKey === firebaseKey);
-            if (!user) return;
-
-            document.getElementById('resetUserId').value = firebaseKey;
-            document.getElementById('resetUsernameDisplay').textContent = user.username;
-            document.getElementById('newPassword').value = '';
-            document.getElementById('resetPasswordModal').style.display = 'flex';
+            showToast('info', 'Keamanan', 'Untuk mereset password, silakan gunakan Firebase Console -> Authentication.');
         }
 
         function closeResetPasswordModal() {
@@ -2508,77 +2544,18 @@
         }
 
         async function saveNewPassword() {
-            const firebaseKey = document.getElementById('resetUserId').value;
-            const newPassword = document.getElementById('newPassword').value;
-
-            if (!newPassword) {
-                showToast('error', 'Error', 'Password tidak boleh kosong');
-                return;
-            }
-
-            const user = users.find(u => u.firebaseKey === firebaseKey);
-            if (user) {
-                const userData = {
-                    username: user.username,
-                    fullName: user.fullName,
-                    role: user.role,
-                    password: newPassword,
-                    createdAt: user.createdAt,
-                    createdBy: user.createdBy,
-                    updatedAt: Date.now(),
-                    updatedBy: currentUser.username
-                };
-                
-                const success = await saveToFirebase(`users/${firebaseKey}`, userData);
-                if (success) {
-                    showToast('success', 'Berhasil', 'Password berhasil direset.');
-                    closeResetPasswordModal();
-                }
-            }
+           // Disabled via UI mapping above
         }
         
-        // FORGOT PASSWORD FUNCTIONS (Admin Recovery)
+        // FORGOT PASSWORD FUNCTIONS
         function showForgotPasswordModal() {
             document.getElementById('forgotPasswordModal').style.display = 'flex';
             document.getElementById('recoveryCode').value = '';
         }
 
         async function processAdminReset() {
-            const code = document.getElementById('recoveryCode').value;
-            
-            // SECURITY CHECK: This is a client-side check for demonstration. 
-            // In production, this should be handled securely on the server.
-            if (code === 'RESET-ADMIN') {
-                try {
-                    // Reset admin password
-                    const adminUser = users.find(u => u.username === 'admin');
-                    if (adminUser) {
-                        await db.ref('users/' + adminUser.firebaseKey).update({
-                            password: 'admin123'
-                        });
-                        showToast('success', 'Berhasil', 'Password Admin telah direset ke: admin123');
-                        document.getElementById('forgotPasswordModal').style.display = 'none';
-                    } else {
-                        // If admin user doesn't exist, create it
-                        await db.ref('users/admin').set({
-                            username: 'admin',
-                            password: 'admin123',
-                            role: 'admin',
-                            fullName: 'Administrator',
-                            createdAt: Date.now()
-                        });
-                         showToast('success', 'Berhasil', 'Akun Admin dibuat dengan password: admin123');
-                         document.getElementById('forgotPasswordModal').style.display = 'none';
-                         // Reload data to reflect changes
-                         loadAllData();
-                    }
-                } catch (e) {
-                    showToast('error', 'Gagal', 'Terjadi kesalahan saat reset password.');
-                    console.error(e);
-                }
-            } else {
-                showToast('error', 'Gagal', 'Kode master salah!');
-            }
+            showToast('info', 'Info', 'Silakan gunakan fitur reset password bawaan Firebase Auth atau hubungi Administrator tertinggi Anda.');
+            document.getElementById('forgotPasswordModal').style.display = 'none';
         }
 
 
@@ -2737,8 +2714,6 @@
                 tbody.appendChild(tr);
             });
         }
-
-        // ==================== RESTORED MISSING FUNCTIONS ====================
         
         function showDetailMember(firebaseKey) {
             const member = members.find(m => m.firebaseKey === firebaseKey);
@@ -2873,7 +2848,6 @@
             
             const success = await deleteFromFirebase(`attendance/${firebaseKey}`);
             if (success) {
-                // Kosongkan informasi pencarian
                 document.getElementById('searchAttendance').value = '';
                 filterAttendance(); 
                 showToast('success', 'Berhasil', 'Data kehadiran dihapus dan pencarian direset.');
@@ -2887,7 +2861,7 @@
                 tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;">Belum ada data transaksi.</td></tr>`;
                 return;
             }
-            // Safely sort by date
+            
             const sortedFinance = [...finance].sort((a, b) => {
                 const dateA = a.date ? new Date(a.date) : new Date(0);
                 const dateB = b.date ? new Date(b.date) : new Date(0);
@@ -2925,7 +2899,6 @@
             members.forEach(m => activities.push({ date: m.createdAt, activity: 'Anggota Baru', detail: m.nama }));
             attendance.forEach(a => activities.push({ date: a.createdAt, activity: 'Kehadiran', detail: `${a.memberName} - ${a.status}` }));
             
-            // Safely sort activities
             activities.sort((a, b) => {
                 const dateA = a.date ? new Date(a.date) : new Date(0);
                 const dateB = b.date ? new Date(b.date) : new Date(0);
@@ -2940,10 +2913,8 @@
         function updateCharts() {
             if (!window.Chart) return;
 
-            // Category Chart
             const ctx1 = document.getElementById('categoryChart');
             if (ctx1) {
-                // Destroy existing chart instance if it exists
                 if (categoryChartInstance) {
                     categoryChartInstance.destroy();
                 }
@@ -2961,17 +2932,12 @@
                             backgroundColor: ['#3498db', '#e74c3c', '#f39c12']
                         }]
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
+                    options: { responsive: true, maintainAspectRatio: false }
                 });
             }
 
-            // Status Chart
             const ctx2 = document.getElementById('statusChart');
             if (ctx2) {
-                // Destroy existing chart instance if it exists
                 if (statusChartInstance) {
                     statusChartInstance.destroy();
                 }
@@ -2988,10 +2954,7 @@
                             backgroundColor: ['#2ecc71', '#e74c3c']
                         }]
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
+                    options: { responsive: true, maintainAspectRatio: false }
                 });
             }
         }
@@ -3028,20 +2991,16 @@
         }
 
         function checkForNotifications() {
-            // Basic notification check
             const pending = members.filter(m => !m.status || m.status === 'pending').length;
             if (pending > 0 && currentUser.role === 'admin') {
                 showToast('warning', 'Pemberitahuan', `Ada ${pending} anggota perlu verifikasi.`);
             }
         }
 
-        // Correct implementation for filterMembers to support buttons
         function filterMembers(status) {
-             // Handle button active state
              if (status && event && event.type === 'click') {
                  document.querySelectorAll('#members .filter-buttons .filter-btn').forEach(btn => btn.classList.remove('active'));
                  event.target.classList.add('active');
-                 // Store current filter
                  window.currentMemberFilter = status;
              }
              
@@ -3055,7 +3014,7 @@
                  let statusMatch = true;
                  
                  if (currentFilter !== 'all' && cells.length > 6) {
-                     const statusCell = cells[6].textContent.toLowerCase(); // Status column index
+                     const statusCell = cells[6].textContent.toLowerCase(); 
                      statusMatch = statusCell.includes(currentFilter);
                  }
                  
@@ -3067,7 +3026,6 @@
              }
         }
         
-        // Correct implementation for category filter
         function filterMembersByCategory(category) {
              if (category && event && event.type === 'click') {
                  document.querySelectorAll('#members .filter-buttons .filter-btn').forEach(btn => btn.classList.remove('active'));
@@ -3130,7 +3088,6 @@
             document.getElementById('attendanceModalTitle').textContent = '➕ Check-in Manual';
             document.getElementById('attendanceId').value = '';
             
-            // Reset Form
             document.getElementById('attendanceDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('attendanceStatus').value = 'hadir';
             document.getElementById('attendanceNote').value = '';
@@ -3152,12 +3109,10 @@
             document.getElementById('attendanceStatus').value = record.status;
             document.getElementById('attendanceNote').value = record.note;
             
-            // Set member info manually for edit mode
             const member = members.find(m => m.firebaseKey === record.memberId);
             if (member) {
                 selectMemberCheckin(member);
             } else {
-                // Fallback if member deleted
                 document.getElementById('attendanceMemberId').value = record.memberId;
                 document.getElementById('selectedMemberName').textContent = record.memberName;
                 document.getElementById('selectedMemberKK').textContent = record.memberNoKep || '-';
@@ -3166,8 +3121,6 @@
             }
         }
 
-        // --- NEW FUNCTIONS FOR MANUAL CHECKIN ---
-        
         function searchMemberCheckin() {
             const term = document.getElementById('checkinSearch').value.toLowerCase();
             const resultsContainer = document.getElementById('checkinSearchResults');
@@ -3181,7 +3134,7 @@
             const filtered = members.filter(m => 
                 (m.nama && m.nama.toLowerCase().includes(term)) || 
                 (m.no_kep && m.no_kep.toLowerCase().includes(term))
-            ).slice(0, 10); // Limit to 10 results
+            ).slice(0, 10); 
             
             if (filtered.length === 0) {
                 resultsContainer.style.display = 'none';
@@ -3232,14 +3185,13 @@
         async function saveAttendance() {
             const firebaseKey = document.getElementById('attendanceId').value;
             const date = document.getElementById('attendanceDate').value;
-            const memberId = document.getElementById('attendanceMemberId').value; // Updated ID
+            const memberId = document.getElementById('attendanceMemberId').value;
             const status = document.getElementById('attendanceStatus').value;
             const note = document.getElementById('attendanceNote').value;
             
             if(!date || !memberId) return showToast('error', 'Error', 'Mohon pilih anggota dan tanggal.');
             
             const member = members.find(m => m.firebaseKey === memberId);
-            // Handle case where member might be deleted but we are editing old record
             const memberName = member ? member.nama : document.getElementById('selectedMemberName').textContent;
             const memberNoKep = member ? member.no_kep : document.getElementById('selectedMemberKK').textContent;
 
@@ -3252,7 +3204,6 @@
             let path;
             if(firebaseKey) {
                 path = `attendance/${firebaseKey}`;
-                // Keep original creation data
                 const existing = attendance.find(a => a.firebaseKey === firebaseKey);
                 if(existing) {
                     data.createdAt = existing.createdAt;
@@ -3301,11 +3252,9 @@
             try {
                 showToast('info', 'Memproses', 'Sedang membuat file Excel...');
 
-                // 1. Format data untuk Excel
                 const dataToExport = members.map((member, index) => {
                     const parsed = parseNomorKK(member.no_kep);
                     
-                    // Format data anak menjadi string agar bisa masuk ke satu sel
                     let childrenString = '';
                     if (member.children && member.children.length > 0) {
                         childrenString = member.children.map(c => 
@@ -3330,39 +3279,23 @@
                     };
                 });
 
-                // 2. Buat Worksheet
                 const ws = XLSX.utils.json_to_sheet(dataToExport);
 
-                // Atur lebar kolom agar rapi
                 const wscols = [
-                    {wch: 5},  // No
-                    {wch: 25}, // Nomor KK
-                    {wch: 30}, // Nama Lengkap
-                    {wch: 15}, // Tanggal Lahir
-                    {wch: 40}, // Alamat
-                    {wch: 15}, // No HP
-                    {wch: 15}, // Jabatan
-                    {wch: 10}, // Status
-                    {wch: 15}, // Kategori
-                    {wch: 15}, // Status Keluarga
-                    {wch: 12}, // Jumlah Anak
-                    {wch: 50}, // Detail Anak
-                    {wch: 20}  // Tanggal Bergabung
+                    {wch: 5}, {wch: 25}, {wch: 30}, {wch: 15}, {wch: 40}, {wch: 15}, {wch: 15}, {wch: 10}, 
+                    {wch: 15}, {wch: 15}, {wch: 12}, {wch: 50}, {wch: 20}
                 ];
                 ws['!cols'] = wscols;
 
-                // 3. Buat Workbook dan tambahkan Worksheet
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Data Anggota");
 
-                // 4. Generate nama file dengan tanggal hari ini
                 const today = new Date();
                 const dateStr = today.getFullYear() + '-' + 
                                String(today.getMonth() + 1).padStart(2, '0') + '-' + 
                                String(today.getDate()).padStart(2, '0');
                 const fileName = `Data_Anggota_Girsang_${dateStr}.xlsx`;
 
-                // 5. Download file
                 XLSX.writeFile(wb, fileName);
 
                 showToast('success', 'Export Berhasil', `File ${fileName} berhasil diunduh.`);
@@ -3383,16 +3316,14 @@
                 showToast('info', 'Memproses', 'Sedang membuat file PDF...');
                 
                 const { jsPDF } = window.jspdf;
-                // Gunakan mode landscape (A4: 297mm x 210mm)
                 const doc = new jsPDF({
                     orientation: 'landscape',
                     unit: 'mm',
                     format: 'a4'
                 }); 
 
-                // --- HEADER DOKUMEN ---
                 doc.setFontSize(18);
-                doc.setTextColor(44, 62, 80); // #2c3e50
+                doc.setTextColor(44, 62, 80); 
                 doc.text('Girsang Boru Panagolan Tangerang', 14, 15);
                 
                 doc.setFontSize(12);
@@ -3402,9 +3333,8 @@
                 doc.setFontSize(10);
                 const dateStr = new Date().toLocaleString('id-ID');
                 doc.text(`Dicetak pada: ${dateStr}`, 14, 28);
-                doc.text(`Total Anggota: ${members.length}`, 283, 28, { align: 'right' }); // Adjusted align position
+                doc.text(`Total Anggota: ${members.length}`, 283, 28, { align: 'right' }); 
 
-                // --- PERSIAPAN DATA TABEL ---
                 const tableColumn = ["No", "Nama", "No KK", "Tgl Lahir", "Alamat", "No HP", "Jabatan", "Status", "Kategori"];
                 const tableRows = [];
 
@@ -3424,7 +3354,6 @@
                     tableRows.push(memberData);
                 });
 
-                // --- GENERATE TABEL ---
                 doc.autoTable({
                     head: [tableColumn],
                     body: tableRows,
@@ -3438,27 +3367,26 @@
                         valign: 'middle'
                     },
                     headStyles: { 
-                        fillColor: [52, 152, 219], // #3498db
+                        fillColor: [52, 152, 219], 
                         textColor: 255,
                         fontStyle: 'bold',
                         halign: 'center'
                     },
                     columnStyles: {
-                        0: { cellWidth: 10, halign: 'center' }, // No
-                        1: { cellWidth: 40 }, // Nama
-                        2: { cellWidth: 35 }, // No KK
-                        3: { cellWidth: 20, halign: 'center' }, // Tgl Lahir
-                        4: { cellWidth: 'auto' }, // Alamat (Auto width to fill remaining space)
-                        5: { cellWidth: 25 }, // No HP
-                        6: { cellWidth: 25 }, // Jabatan
-                        7: { cellWidth: 20, halign: 'center' }, // Status
-                        8: { cellWidth: 25, halign: 'center' }  // Kategori
+                        0: { cellWidth: 10, halign: 'center' },
+                        1: { cellWidth: 40 }, 
+                        2: { cellWidth: 35 }, 
+                        3: { cellWidth: 20, halign: 'center' }, 
+                        4: { cellWidth: 'auto' }, 
+                        5: { cellWidth: 25 }, 
+                        6: { cellWidth: 25 }, 
+                        7: { cellWidth: 20, halign: 'center' }, 
+                        8: { cellWidth: 25, halign: 'center' }  
                     },
                     alternateRowStyles: { 
-                        fillColor: [248, 249, 250] // #f8f9fa
+                        fillColor: [248, 249, 250] 
                     },
                     didDrawPage: function (data) {
-                        // Footer di setiap halaman
                         const pageCount = doc.internal.getNumberOfPages();
                         doc.setFontSize(8);
                         doc.setTextColor(150);
@@ -3471,7 +3399,6 @@
                     }
                 });
 
-                // --- SIMPAN FILE ---
                 const today = new Date();
                 const fileDate = today.getFullYear() + '-' + 
                                String(today.getMonth() + 1).padStart(2, '0') + '-' + 
@@ -3532,7 +3459,6 @@
             const modal = document.getElementById('memberReportModal');
             const printSection = modal.querySelector('.print-section');
             
-            // Set Header Laporan
             printSection.innerHTML = `
                 <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
                     <h2 style="margin:0; color:#2c3e50;">Girsang Boru Panagolan Tangerang</h2>
@@ -3589,9 +3515,7 @@
             Object.keys(families).sort().forEach(famId => {
                 const famMembers = families[famId];
                 
-                // --- MODIFIED SORTING LOGIC ---
                 famMembers.sort((a, b) => {
-                     // Extract status segment (3rd part, index 2)
                      const getStatus = (m) => {
                          if (!m.no_kep) return 'Z';
                          const parts = m.no_kep.split('-');
@@ -3601,7 +3525,6 @@
                      const statusA = getStatus(a);
                      const statusB = getStatus(b);
                      
-                     // Priority: S (1), I (2), A (3), Others (4)
                      const getPriority = (s) => {
                          if (s === 'S') return 1;
                          if (s === 'I') return 2;
@@ -3614,14 +3537,12 @@
                      
                      if (priorityA !== priorityB) return priorityA - priorityB;
                      
-                     // Secondary sort for children (A1, A2...) using numeric sort
                      if (priorityA === 3) {
                          return statusA.localeCompare(statusB, undefined, { numeric: true });
                      }
                      
                      return (a.nama || '').localeCompare(b.nama || '');
                 });
-                // --- END MODIFIED SORTING ---
 
                 const head = famMembers.find(m => m.no_kep.includes('-S-')) || famMembers[0];
                 html += `<div style="background:#f8f9fa; padding:15px; margin-bottom:15px; border-radius:8px; border-left: 4px solid #3498db;">`;
@@ -3725,7 +3646,6 @@
                     </tr>
                 </thead><tbody>`;
             
-            // Sort members alphabetically
             const sortedMembers = [...members].sort((a, b) => (a.nama || '').localeCompare(b.nama || ''));
             
             sortedMembers.forEach((m, i) => {
@@ -3752,7 +3672,6 @@
             let familyHtml = '';
             Object.keys(families).sort().forEach(famId => {
                 const famMembers = families[famId];
-                // Sort Priority: Suami, Istri, Anak...
                 famMembers.sort((a, b) => {
                      const statusA = a.no_kep ? a.no_kep.split('-')[2] : 'Z';
                      const statusB = b.no_kep ? b.no_kep.split('-')[2] : 'Z';
@@ -3778,7 +3697,6 @@
                      
                      familyHtml += `<li style="margin-bottom: 2px;">${roleIcon} <strong>${m.nama}</strong> <span style="color:#777; font-size:10px;">(${role})</span>`;
                      
-                     // Show children if stored in children array
                      if (m.children && m.children.length > 0) {
                         familyHtml += `<ul style="margin-top:2px; padding-left:15px; border-left: 2px solid #ddd; list-style:none;">`;
                         m.children.forEach(c => {
@@ -3798,7 +3716,6 @@
             });
             currentMonthAttendance.sort((a,b) => new Date(a.date) - new Date(b.date));
 
-            // Stats Kehadiran
             const attStats = { hadir: 0, sakit: 0, izin: 0, alfa: 0 };
             currentMonthAttendance.forEach(a => { if(attStats[a.status] !== undefined) attStats[a.status]++; });
 
@@ -3918,7 +3835,6 @@
                 </div>
             `;
 
-            // Open Print Window
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
                 <html>
@@ -3956,7 +3872,6 @@
         function printFinanceReport() { window.print(); }
         function exportFinanceReport() { showToast('info', 'Export', 'Excel exported.'); }
         
-        // MODIFIED SYSTEM INFO FUNCTIONS
         function showSystemInfoModal() { document.getElementById('systemInfoModal').style.display = 'flex'; showSystemInfo(); }
         function closeSystemInfoModal() { document.getElementById('systemInfoModal').style.display = 'none'; }
         
@@ -3988,7 +3903,6 @@
             }
         }
         
-        // ADDED: MODIFIED BACKUP DATA
         async function backupData() {
             try {
                 showToast('info', 'Backup', 'Sedang menyiapkan data...');
@@ -4022,7 +3936,6 @@
             }
         }
 
-        // ADDED: MODIFIED RESTORE DATA
         function showRestoreDialog() {
             const input = document.createElement('input');
             input.type = 'file';
@@ -4078,13 +3991,11 @@
         function refreshData() { loadAllData(); }
         function printDetail() { window.print(); }
         
-        // Scan Barcode Logic
         let html5QrcodeScanner = null;
 
         function showBarcodeScanner() {
             document.getElementById('barcodeScannerModal').style.display = 'flex';
             
-            // Inisialisasi Scanner jika belum ada
             if (!html5QrcodeScanner) {
                 html5QrcodeScanner = new Html5Qrcode("reader");
             }
@@ -4116,7 +4027,6 @@
             // console.warn(`Code scan error = ${error}`);
         }
 
-        // Variable untuk mencegah multiple scan beruntun
         let isScanning = false;
 
         async function onScanSuccess(decodedText, decodedResult) {
@@ -4125,13 +4035,11 @@
 
             console.log(`Scan result: ${decodedText}`);
             
-            // Cari anggota berdasarkan No KK (Asumsi barcode berisi No KK)
             const member = members.find(m => m.no_kep === decodedText);
             
             if (member) {
                 const today = new Date().toISOString().split('T')[0];
                 
-                // Cek apakah sudah absen hari ini
                 const alreadyPresent = attendance.find(a => a.date === today && a.memberId === member.firebaseKey);
                 
                 if (alreadyPresent) {
@@ -4151,7 +4059,6 @@
                         updatedBy: currentUser.username
                     };
                     
-                    // Simpan ke Firebase
                     const newKey = db.ref('attendance').push().key;
                     await saveToFirebase(`attendance/${newKey}`, { ...attendanceData, firebaseKey: newKey });
                     
@@ -4163,14 +4070,12 @@
                 document.getElementById('scanResult').innerHTML = `<span style="color:red">❌ Tidak ditemukan: ${decodedText}</span>`;
             }
 
-            // Cooldown 3 detik sebelum bisa scan lagi
             setTimeout(() => {
                 isScanning = false;
                 document.getElementById('scanResult').textContent = '';
             }, 3000);
         }
         
-        // Generate QR Code Function
         function showGenerateQRModal(noKep, nama) {
             if (!noKep) {
                 showToast('error', 'Error', 'Anggota tidak memiliki Nomor KK.');
@@ -4182,7 +4087,7 @@
             document.getElementById('qrMemberKK').textContent = noKep;
             
             const qrContainer = document.getElementById('qrcodeDisplay');
-            qrContainer.innerHTML = ''; // Clear previous QR
+            qrContainer.innerHTML = ''; 
             
             new QRCode(qrContainer, {
                 text: noKep,
@@ -4230,4 +4135,3 @@
     </script>
 </body>
 </html>
-
