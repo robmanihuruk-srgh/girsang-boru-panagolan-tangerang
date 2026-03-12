@@ -1095,7 +1095,7 @@
                 <div class="modal-close" onclick="closeMemberReportModal()">×</div>
             </div>
             <div class="modal-body">
-                <div class="print-section">
+                <div class="print-section" id="printSectionContent">
                     <div style="text-align: center; margin-bottom: 20px;">
                         <h2>Girsang Boru Panagolan Tangerang</h2>
                         <h3>Laporan Data Anggota</h3>
@@ -2910,11 +2910,18 @@
                 return 0;
             });
 
-            sortedMembers.forEach((member, index) => {
+            // Reassign running number dynamically after sorting
+            let currentDisplayNo = 1;
+
+            sortedMembers.forEach((member) => {
                 const tr = document.createElement('tr');
                 const parsed = parseNomorKK(member.no_kep);
+                
+                // Tambahkan atribut data untuk digunakan fungsi filter agar lebih mudah
+                tr.setAttribute('data-no', currentDisplayNo);
+
                 tr.innerHTML = `
-                    <td>${index + 1}</td>
+                    <td>${currentDisplayNo}</td>
                     <td><strong>${member.nama || '-'}</strong>${member.no_kep ? `<br><small style="color:#666;">${member.no_kep}</small>` : ''}</td>
                     <td>${member.tgl_lahir ? formatDate(member.tgl_lahir) : '-'}</td>
                     <td>${member.alamat ? (member.alamat.length > 25 ? member.alamat.substring(0, 25) + '...' : member.alamat) : '-'}</td>
@@ -2933,6 +2940,7 @@
                     </td>
                 `;
                 tbody.appendChild(tr);
+                currentDisplayNo++;
             });
             
             // Memastikan ikon sorting dan filter box berfungsi harmonis
@@ -3842,17 +3850,60 @@
         function closeMemberReportModal() { document.getElementById('memberReportModal').style.display = 'none'; }
         
         function printElement(element) {
+            // PERBAIKAN: Menambahkan stylesheet agar struktur tampilan tidak pecah saat dicetak
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
                 <html>
                 <head>
-                    <title>Cetak Laporan</title>
+                    <title>Cetak Laporan - Girsang Boru Panagolan</title>
                     <style>
-                        body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                        th { background: #f8f9fa; padding: 8px; border: 1px solid #ddd; text-align: left; }
-                        td { padding: 8px; border: 1px solid #ddd; }
-                        h2, h3 { text-align: center; color: #2c3e50; }
+                        @page { margin: 15mm; }
+                        body { 
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                            padding: 20px; 
+                            color: #333;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        table { 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin-top: 15px; 
+                            font-size: 12px;
+                        }
+                        th { 
+                            background-color: #f8f9fa !important; 
+                            padding: 10px; 
+                            border: 1px solid #ddd; 
+                            text-align: left; 
+                            font-weight: bold;
+                        }
+                        td { 
+                            padding: 8px 10px; 
+                            border: 1px solid #ddd; 
+                        }
+                        tr:nth-child(even) { background-color: #fbfbfb !important; }
+                        h2 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
+                        h3 { text-align: center; color: #34495e; margin-top: 0; }
+                        p { text-align: center; color: #7f8c8d; font-size: 14px; }
+                        
+                        /* Styles specific to Hierarchy Report */
+                        .family-block {
+                            background-color: #f8f9fa !important;
+                            padding: 15px;
+                            margin-bottom: 15px;
+                            border-radius: 8px;
+                            border-left: 4px solid #3498db !important;
+                            page-break-inside: avoid;
+                        }
+                        ul { margin: 10px 0; padding-left: 20px; }
+                        li { margin-bottom: 5px; font-size: 13px; }
+                        .child-list {
+                            margin-top: 5px;
+                            border-left: 2px solid #bdc3c7;
+                            padding-left: 15px;
+                            list-style-type: none;
+                        }
                     </style>
                 </head>
                 <body>
@@ -3861,28 +3912,33 @@
                 </html>
             `);
             printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-            printWindow.close();
+            
+            // Tunggu sebentar agar resource termuat sebelum memanggil print
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+                printWindow.close();
+            }, 250);
         }
 
         function printMemberReport() { 
-            printElement(document.querySelector('#memberReportModal .print-section')); 
+            printElement(document.querySelector('#printSectionContent')); 
         }
         
         function showDynamicReport(title, subtitle, content) {
             const modal = document.getElementById('memberReportModal');
-            const printSection = modal.querySelector('.print-section');
+            const printSection = document.getElementById('printSectionContent');
             
+            // Reformat header khusus untuk cetak
             printSection.innerHTML = `
-                <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
-                    <h2 style="margin:0; color:#2c3e50;">Girsang Boru Panagolan Tangerang</h2>
-                    <h3 style="margin:5px 0; color:#34495e;">${title}</h3>
+                <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #3498db; padding-bottom: 15px;">
+                    <h2 style="margin:0; color:#2c3e50; font-size: 24px;">Girsang Boru Panagolan Tangerang</h2>
+                    <h3 style="margin:8px 0 5px 0; color:#34495e; font-size: 18px;">${title}</h3>
                     <p style="margin:0; color:#7f8c8d; font-size:14px;">${subtitle}</p>
                 </div>
                 <div id="reportContentArea">${content}</div>
-                <div style="margin-top: 30px; text-align: right; font-size: 12px; color: #95a5a6;">
-                    Dicetak pada: ${new Date().toLocaleString('id-ID')}
+                <div style="margin-top: 40px; text-align: right; font-size: 11px; color: #95a5a6; border-top: 1px solid #eee; padding-top: 10px;">
+                    Dicetak pada: ${new Date().toLocaleString('id-ID')} | Oleh: ${currentUser.username}
                 </div>
             `;
             
@@ -3891,22 +3947,22 @@
         }
 
         function generateMemberReport() {
-            let html = `<table style="width:100%; border-collapse: collapse; font-size:12px;">
+            let html = `<table>
                 <thead>
-                    <tr style="background:#f1f2f6;">
-                        <th style="padding:8px; border:1px solid #ddd;">No</th>
-                        <th style="padding:8px; border:1px solid #ddd;">Nama</th>
-                        <th style="padding:8px; border:1px solid #ddd;">No KK</th>
-                        <th style="padding:8px; border:1px solid #ddd;">Status</th>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama</th>
+                        <th>No KK</th>
+                        <th>Status</th>
                     </tr>
                 </thead><tbody>`;
             
             members.forEach((m, i) => {
                 html += `<tr>
-                    <td style="padding:8px; border:1px solid #ddd; text-align:center;">${i+1}</td>
-                    <td style="padding:8px; border:1px solid #ddd;">${m.nama}</td>
-                    <td style="padding:8px; border:1px solid #ddd;">${m.no_kep || '-'}</td>
-                    <td style="padding:8px; border:1px solid #ddd;">${m.status || '-'}</td>
+                    <td style="text-align:center;">${i+1}</td>
+                    <td><strong>${m.nama}</strong></td>
+                    <td>${m.no_kep || '-'}</td>
+                    <td>${m.status === 'aktif' ? '<span style="color:green">Aktif</span>' : '<span style="color:red">Nonaktif</span>'}</td>
                 </tr>`;
             });
             html += '</tbody></table>';
@@ -3925,7 +3981,7 @@
                 families[familyId].push(m);
             });
 
-            let html = '<div style="font-family: monospace;">';
+            let html = '<div>';
             
             Object.keys(families).sort().forEach(famId => {
                 const famMembers = families[famId];
@@ -3960,17 +4016,21 @@
                 });
 
                 const head = famMembers.find(m => m.no_kep.includes('-S-')) || famMembers[0];
-                html += `<div style="background:#f8f9fa; padding:15px; margin-bottom:15px; border-radius:8px; border-left: 4px solid #3498db;">`;
-                html += `<strong style="font-size:14px; color:#2c3e50;">Keluarga #${famId} - ${head.nama}</strong>`;
-                html += `<ul style="list-style:none; padding-left:20px; margin-top:10px;">`;
+                
+                // Gunakan class CSS yang sudah didefinisikan di fungsi printElement()
+                html += `<div class="family-block">`;
+                html += `<strong>Keluarga #${famId} - ${head.nama}</strong>`;
+                html += `<ul>`;
                 
                 famMembers.forEach(m => {
                     const parts = m.no_kep.split('-')[2] || '?';
                     let role = parts === 'S' ? 'Suami' : parts === 'I' ? 'Istri' : parts.startsWith('A') ? 'Anak' : 'Anggota';
-                    html += `<li style="margin-bottom:5px;">${role}: <strong>${m.nama}</strong> <span style="color:#7f8c8d; font-size:12px;">(${m.status})</span>`;
+                    let icon = parts === 'S' ? '👨' : parts === 'I' ? '👩' : '👦';
+                    
+                    html += `<li>${icon} ${role}: <strong>${m.nama}</strong> <span style="color:#7f8c8d; font-size:11px;">(${m.status})</span>`;
                     
                     if (m.children && m.children.length > 0) {
-                        html += `<ul style="margin-top:5px; border-left:2px solid #bdc3c7; padding-left:10px;">`;
+                        html += `<ul class="child-list">`;
                         m.children.forEach(c => {
                             html += `<li>👶 ${c.nama} (${c.jenis_kelamin || '-'})</li>`;
                         });
@@ -4003,27 +4063,28 @@
 
             let html = `
                 <div style="display:flex; gap:10px; margin-bottom:20px; justify-content:center;">
-                    <div style="background:#d4edda; padding:10px; border-radius:5px;">Hadir: ${stats.hadir}</div>
-                    <div style="background:#fff3cd; padding:10px; border-radius:5px;">Sakit: ${stats.sakit}</div>
-                    <div style="background:#d1ecf1; padding:10px; border-radius:5px;">Izin: ${stats.izin}</div>
-                    <div style="background:#f8d7da; padding:10px; border-radius:5px;">Alfa: ${stats.alfa}</div>
+                    <div style="background:#d4edda; padding:10px; border-radius:5px; border: 1px solid #c3e6cb;">Hadir: <strong>${stats.hadir}</strong></div>
+                    <div style="background:#fff3cd; padding:10px; border-radius:5px; border: 1px solid #ffeeba;">Sakit: <strong>${stats.sakit}</strong></div>
+                    <div style="background:#d1ecf1; padding:10px; border-radius:5px; border: 1px solid #bee5eb;">Izin: <strong>${stats.izin}</strong></div>
+                    <div style="background:#f8d7da; padding:10px; border-radius:5px; border: 1px solid #f5c6cb;">Alfa: <strong>${stats.alfa}</strong></div>
                 </div>
-                <table style="width:100%; border-collapse: collapse; font-size:12px;">
+                <table>
                 <thead>
-                    <tr style="background:#f1f2f6;">
-                        <th style="padding:8px; border:1px solid #ddd;">Tanggal</th>
-                        <th style="padding:8px; border:1px solid #ddd;">Nama</th>
-                        <th style="padding:8px; border:1px solid #ddd;">Status</th>
-                        <th style="padding:8px; border:1px solid #ddd;">Ket</th>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Nama</th>
+                        <th>Status</th>
+                        <th>Keterangan</th>
                     </tr>
                 </thead><tbody>`;
             
             filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(a => {
+                let statusColor = a.status === 'hadir' ? 'green' : (a.status === 'alfa' ? 'red' : 'orange');
                 html += `<tr>
-                    <td style="padding:8px; border:1px solid #ddd;">${formatDate(a.date)}</td>
-                    <td style="padding:8px; border:1px solid #ddd;">${a.memberName}</td>
-                    <td style="padding:8px; border:1px solid #ddd;">${a.status}</td>
-                    <td style="padding:8px; border:1px solid #ddd;">${a.note || '-'}</td>
+                    <td>${formatDate(a.date)}</td>
+                    <td><strong>${a.memberName}</strong></td>
+                    <td style="color:${statusColor}; font-weight:bold;">${a.status.toUpperCase()}</td>
+                    <td>${a.note || '-'}</td>
                 </tr>`;
             });
             html += '</tbody></table>';
@@ -4549,4 +4610,5 @@
         console.log('🚀 Sistem Girsang Boru Panagolan siap digunakan!');
     </script>
 </body>
+
 </html>
