@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="manifest" href="data:application/manifest+json,{}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Girsang Management">
+<link rel="apple-touch-icon" href="logo_removebg.png">
     <title>🏛️ Girsang Boru Panagolan Tangerang - Management System</title>
     
     <style>
@@ -1429,6 +1434,7 @@
                     <h2>Management System</h2>
                 </div>
             </div>
+			<button id="installButton" class="btn-install" style="display: none;">📲 Install App</button>
             <div class="user-section">
                 <div class="user-info">
                     <div class="user-name" id="userDisplayName">User</div>
@@ -4609,6 +4615,85 @@
 
         console.log('🚀 Sistem Girsang Boru Panagolan siap digunakan!');
     </script>
+
+    <!-- ==================== KODE PWA YANG BENAR ==================== -->
+    <script>
+    // Manifest Dinamis
+    (function() {
+        const manifestObj = {
+            name: "Girsang Boru Panagolan Management",
+            short_name: "Girsang App",
+            description: "Sistem Manajemen Girsang Boru Panagolan Tangerang",
+            start_url: "/",
+            display: "standalone",
+            theme_color: "#3498db",
+            background_color: "#ffffff",
+            icons: [
+                { src: "logo_removebg.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
+                { src: "logo_removebg.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
+            ]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestObj)], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        const linkManifest = document.querySelector('link[rel="manifest"]');
+        if (linkManifest) linkManifest.href = manifestURL;
+    })();
+
+    // Service Worker
+    if ('serviceWorker' in navigator) {
+        const swCode = `
+const CACHE_NAME = 'girsang-cache-v1';
+const urlsToCache = ['/', '/index.html', '/logo_removebg.png'];
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+  );
+});
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request).then(response => response || fetch(event.request))
+  );
+});
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cache => {
+          if (cache !== CACHE_NAME) return caches.delete(cache);
+        })
+      );
+    })
+  );
+});
+        `;
+        const blob = new Blob([swCode], {type: 'application/javascript'});
+        const swURL = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(swURL).then(reg => {
+            console.log('Service worker registered', reg);
+        }).catch(err => console.error('SW registration failed', err));
+    }
+
+    // Tombol Install
+    let deferredPrompt;
+    const installBtn = document.getElementById('installButton');
+    if (installBtn) {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'inline-flex';
+            installBtn.addEventListener('click', () => {
+                installBtn.style.display = 'none';
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') console.log('User accepted install');
+                    deferredPrompt = null;
+                });
+            });
+        });
+    }
+    </script>
+</body>
+</html>
 </body>
 
 </html>
